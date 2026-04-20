@@ -416,6 +416,8 @@
 			"toggleWordHighlight": "Timing - Toggle active word highlight",
 			"moveFirstWordAndPlay": "Timing - Move to first word and play",
 			"moveLastWordAndPlay": "Timing - Move to last word and play",
+			"urbanDictionary": "Edit - Look up in Urban Dictionary",
+			"urbanDictionarySync": "Timing - Look up in Urban Dictionary",
 			"playPause": "Playback - Play/Pause",
 			"seekForward": "Playback - Seek forward 5s",
 			"seekBackward": "Playback - Seek backward 5s",
@@ -455,6 +457,7 @@
 	"audioPanel": {
 		"volume": "Volume",
 		"playbackRate": "Playback rate",
+		"preservesPitch": "Preserve Pitch",
 		"clickToLoadMusic": "Click the icon button to load music",
 		"playPause": "Play / pause music",
 		"expandSpectrogram": "Expand / collapse spectrogram"
@@ -699,6 +702,13 @@
 		"placeholder": "New word",
 		"applyToAll": "Apply this replacing to all identical words",
 		"caseSensitive": "Match case (Exact match)"
+	},
+	"urbanDictionary": {
+		"title": "Urban Dictionary",
+		"slang": "slang dictionary",
+		"noDefinitions": "No definitions found for \"{word}\"",
+		"viewOnline": "View online",
+		"by": "By"
 	},
 	"timeShiftDialog": {
 		"title": "Time Shift",
