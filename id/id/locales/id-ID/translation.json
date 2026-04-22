@@ -107,7 +107,11 @@
 			"fadeWidth": "Fade Width",
 			"mode": "Mode",
 			"standard": "Standard",
-			"timing": "Timing"
+			"timing": "Timing",
+			"render": "Render",
+			"vsync": "V-Sync",
+			"dev": "Dev",
+			"showFps": "Show FPS"
 		},
 		"syncMode": {
 			"currentEmptyBeat": "Empty Beat",
@@ -298,6 +302,10 @@
 			},
 			"debugInfo": {
 				"title": "Debug Information"
+			},
+			"previewPerformance": {
+				"title": "Preview Performance",
+				"showFps": "Show FPS Counter in Preview"
 			}
 		},
 		"spectrogram": {
@@ -864,8 +872,11 @@
 	"spectrogram": {
 		"invalidEndTime": "Cannot select this end time",
 		"noAudioLoaded": "Please load an audio file to render the spectrogram",
-		"loadAudio": "Load an audio file",
-		"showUnselectedLines": "Show unselected lines"
+		"loadAudio": "Load audio file",
+		"showUnselectedLines": "Show unselected lines",
+		"settings": "Spectrogram Settings",
+		"resolution": "FFT Resolution",
+		"height": "Display Height"
 	},
 	"pwa": {
 		"offlineReady": "Site successfully cached for offline use",
