@@ -7,6 +7,7 @@ export type KeyBindingsConfig = string[];
 export interface KeyBindingEvent {
 	downTime: number;
 	downTimeOffset: number;
+	triggerTime: number;
 }
 export type KeyBindingCallback = (evt: KeyBindingEvent) => void;
 
@@ -175,6 +176,7 @@ function triggerCallbacks(
 		const e: KeyBindingEvent = {
 			downTime: targetTime,
 			downTimeOffset,
+			triggerTime: evt.timeStamp,
 		};
 		for (const cb of callbacks) {
 			try {
@@ -251,10 +253,12 @@ export function forceInvokeKeyBindingAtom(
 
 	if (callbacks) {
 		const downTimeOffset = 0;
+		const eventTime = evt?.timeStamp ?? performance.now();
 
 		const e: KeyBindingEvent = {
-			downTime,
+			downTime: eventTime,
 			downTimeOffset,
+			triggerTime: eventTime,
 		};
 		for (const cb of callbacks) {
 			try {
