@@ -23,7 +23,7 @@ You can use the online version of this tool by visiting [`https://amll-ttml-tool
 
 Visit the [test branch](https://amll-ttml-tool-test.vercel.app/) to experience the latest features and the latest BUGS!
 
-You can also use the Tauri desktop version built via GitHub Actions; see [GitHub Action Build Tauri Desktop Version](https://github.com/amll-dev/amll-ttml-tool/actions/workflows/build-desktop.yaml) for details.
+You can also use the Tauri desktop version built via GitHub Actions; see [GitHub Action Build Tauri Desktop Version](https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL/actions/workflows/build-desktop.yaml) for details.
 
 ## Editor Features
 
