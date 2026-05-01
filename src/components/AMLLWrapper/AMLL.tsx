@@ -4,13 +4,14 @@ import {
     MeshGradientRenderer,
 } from "@applemusic-like-lyrics/react";
 import { useAtomValue } from "jotai";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
+import { audioEngine } from "$/modules/audio/audio-engine";
 import { 
 	accentColorAtom, 
 	useCustomAccentAtom, 
 	customAccentColorAtom 
 } from "$/modules/settings/states/index.ts";
-import { audioPlayingAtom, currentTimeAtom } from "$/modules/audio/states/index.ts";
+import { audioPlayingAtom } from "$/modules/audio/states/index.ts";
 import { isDarkThemeAtom, lyricLinesAtom } from "$/states/main.ts";
 import { customBackgroundImageAtom } from "$/modules/settings/modals/customBackground";
 import styles from "./AMLL.module.css";
@@ -23,23 +24,59 @@ import classNames from "classnames";
 export const AMLL = memo(() => {
 	const lyrics = useAtomValue(lyricLinesAtom);
 	const darkMode = useAtomValue(isDarkThemeAtom);
-	const currentTime = useAtomValue(currentTimeAtom);
 	const albumImg = useAtomValue(customBackgroundImageAtom);
+	const isPlaying = useAtomValue(audioPlayingAtom);
+	const accentColor = useAtomValue(accentColorAtom);
 
 	const amllLines = useMemo(() => {
         return (lyrics?.lyricLines as any) || [];
     }, [lyrics]);
 
-	const isPlaying = useAtomValue(audioPlayingAtom);
 	const useCustomAccent = useAtomValue(useCustomAccentAtom);
 	const customAccentColor = useAtomValue(customAccentColorAtom);
+	const [currentTime, setCurrentTime] = useState(0);
+
+	useEffect(() => {
+		let rafId = 0;
+		let lastAudioTime = audioEngine.musicCurrentTime;
+		let interpolatedTime = lastAudioTime;
+		let lastRealTime = performance.now();
+
+		const loop = () => {
+			const now = performance.now();
+			const audioTime = audioEngine.musicCurrentTime;
+			const playing = audioEngine.musicPlaying;
+
+			if (!playing) {
+				setCurrentTime(audioTime * 1000);
+				lastAudioTime = audioTime;
+				interpolatedTime = audioTime;
+				lastRealTime = now;
+			} else {
+				if (audioTime !== lastAudioTime) {
+					interpolatedTime = audioTime;
+					lastAudioTime = audioTime;
+				} else {
+					const dt = (now - lastRealTime) / 1000;
+					interpolatedTime += dt * audioEngine.musicPlayBackRate;
+				}
+				lastRealTime = now;
+				setCurrentTime(interpolatedTime * 1000);
+			}
+
+			rafId = requestAnimationFrame(loop);
+		};
+
+		rafId = requestAnimationFrame(loop);
+		return () => cancelAnimationFrame(rafId);
+	}, []);
 
 	const fallbackColors = useMemo(() => {
 		if (useCustomAccent && customAccentColor) {
 			return [customAccentColor, "#121212", "#000000"];
 		}
-		return undefined;
-	}, [useCustomAccent, customAccentColor]);
+		return ["#f97316", "#8b5cf6", "#000000"];
+	}, [useCustomAccent, customAccentColor, accentColor]);
 
 	return (
 		<div className={classNames(styles.amllContainer, darkMode && styles.isDark)}>
@@ -49,7 +86,7 @@ export const AMLL = memo(() => {
 					key={albumImg || "default"}
                     album={albumImg || undefined}
 					colors={fallbackColors}
-                    playing={true}
+                    playing={isPlaying}
                     fps={60}
                     renderScale={0.7}
                     renderer={MeshGradientRenderer}
@@ -66,7 +103,7 @@ export const AMLL = memo(() => {
                         enableSpring={false}
                         enableBlur={false}
                         enableScale={true}
-                        playing={true}
+                        playing={isPlaying}
                     />
                 ) : (
                     <div className={styles.noLyrics}>No lyrics available in store</div>

@@ -381,22 +381,6 @@ export const collectPossibleGrammarWarnings = (
 		const current = normalizeForLanguage(wordObj.word, language);
 		if (!current || ignoredWords.has(current)) continue;
 
-		if (i > 0) {
-			const prevRaw = line.words[i - 1].word;
-			const currentRaw = wordObj.word;
-			const prev = normalizeForLanguage(prevRaw, language);
-			if (prev && current === prev) {
-				const hasSpaceBetween = /\s$/.test(prevRaw) || /^\s/.test(currentRaw);
-				const hasPunctuationBetween =
-					/[.,!?;:]$/.test(prevRaw.trim()) ||
-					/^[.,!?;:]/.test(currentRaw.trim());
-				if (hasSpaceBetween || hasPunctuationBetween) {
-					warnings.add(line.words[i - 1].id);
-					warnings.add(wordObj.id);
-				}
-			}
-		}
-
 		const ambiguousWords = getAmbiguousWords(language);
 		const normalizedForCheck = normalizeForLanguage(wordObj.word, "en");
 		for (const amb of ambiguousWords) {
@@ -506,17 +490,7 @@ export const getGrammarSuggestions = (
 	}
 
 	if (wordIndex > 0) {
-		const prevRaw = line.words[wordIndex - 1].word;
-		const currentRaw = word.word;
-		const prev = normalizeForLanguage(prevRaw, language);
-		if (prev && current === prev) {
-			const hasSpaceBetween = /\s$/.test(prevRaw) || /^\s/.test(currentRaw);
-			const hasPunctuationBetween =
-				/[.,!?;:]$/.test(prevRaw.trim()) || /^[.,!?;:]/.test(currentRaw.trim());
-			if (hasSpaceBetween || hasPunctuationBetween) {
-				suggestions.push("__REMOVE_REPEATED_WORD__");
-			}
-		}
+		// no repeated-word suggestion by default; lyrics often intentionally repeat words
 	}
 
 	const result = [...new Set(suggestions)];

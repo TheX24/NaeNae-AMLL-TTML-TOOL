@@ -25,8 +25,10 @@ import {
 	selectedLinesAtom,
 	requestFocusAtom,
 } from "$/states/main.ts";
+import type { LyricWord } from "$/types/ttml";
 import {
 	collectPossibleGrammarWarnings,
+	getGrammarSuggestions,
 	normalizeWord,
 } from "$/modules/lyric-editor/utils/grammar-warning";
 
@@ -42,7 +44,9 @@ interface GrammarIssue {
 	lineIndex: number;
 	isBackground: boolean;
 	wordId: string;
+	wordIndex: number;
 	word: string;
+	wordSnapshot: LyricWord;
 	message: string;
 	suggestion?: string;
 }
@@ -74,7 +78,11 @@ export const GrammarCheckDialog = () => {
 
 		// Count main vocal lines for display (BG lines don't increase the count)
 		let mainLineCount = 0;
-		const safeIgnored = Array.isArray(ignoredWords) ? ignoredWords : [];
+		const safeIgnored = new Set(
+			(Array.isArray(ignoredWords) ? ignoredWords : [])
+				.map((word) => normalizeWord(word))
+				.filter(Boolean),
+		);
 
 		allLyricLines.forEach((line) => {
 			const isBackground = line.isBG;
@@ -82,8 +90,7 @@ export const GrammarCheckDialog = () => {
 				mainLineCount++;
 			}
 
-			const ignoredWords = new Set<string>();
-			const warnings = collectPossibleGrammarWarnings(line, ignoredWords);
+			const warnings = collectPossibleGrammarWarnings(line, safeIgnored);
 			const wordIdsWithWarnings = Array.from(warnings);
 
 			const wordIndexMap = new Map<string, number>();
@@ -98,69 +105,56 @@ export const GrammarCheckDialog = () => {
 				if (!word) return;
 
 				const normalized = normalizeWord(word.word);
-				let issueType: GrammarIssue["type"] = "ambiguous";
-				let message = "";
-				let suggestion: string | undefined;
+				if (safeIgnored.has(normalized)) return;
 
-				// Skip words in the global ignore list
-				const isIgnored = safeIgnored.some(
-					(ignored) => normalized.toLowerCase() === ignored.toLowerCase(),
-				);
-				if (isIgnored) return;
+				const suggestions = getGrammarSuggestions(line, wordIndex);
+				if (suggestions.length === 0) return;
 
-				// Check for lowercase at start of line
 				const firstAlphaIndex = word.word.search(/[a-zA-Zа-яёÁ-ЯЁ]/);
-				if (
+				const hasCapitalInMiddle = /[a-zA-Zà-ÿÀ-ÿ].*[A-ZÀ-Ý]/.test(word.word);
+				const isRepeatedRemoval = suggestions.includes("__REMOVE_REPEATED_WORD__");
+				let issueType: GrammarIssue["type"] = "ambiguous";
+				let message = t("grammarCheck.ambiguous", "Possible grammar issue");
+				let suggestion = suggestions[0];
+
+				if (isRepeatedRemoval) {
+					issueType = "repeated";
+					message = t("grammarCheck.repeatedWord", "Repeated word");
+					suggestion = "__REMOVE_REPEATED_WORD__";
+				} else if (
 					wordIndex === 0 &&
 					firstAlphaIndex !== -1 &&
-					word.word[firstAlphaIndex] ===
-						word.word[firstAlphaIndex].toLowerCase()
+					word.word[firstAlphaIndex] === word.word[firstAlphaIndex].toLowerCase()
 				) {
 					issueType = "capitalization";
 					message = t(
 						"grammarCheck.capitalization",
 						"Word should be capitalized",
 					);
-					const char = word.word[firstAlphaIndex];
-					suggestion =
-						word.word.slice(0, firstAlphaIndex) +
-						char.toUpperCase() +
-						word.word.slice(firstAlphaIndex + 1);
-				}
-
-				// Check for capital letters in middle of line
-				if (wordIndex > 0 && !message) {
-					const hasCapitalInMiddle = /[a-zA-Zà-ÿÀ-ÿ].*[A-ZÀ-Ý]/.test(word.word);
-					if (hasCapitalInMiddle) {
-						issueType = "ambiguous";
-						message = t(
-							"grammarCheck.capitalInMiddle",
-							"Word has capital letters in middle",
-						);
-						// Suggestion: lowercase the capital letter in middle
-						const lowerMatch = word.word.match(/[a-zà-ÿ][A-ZÀ-Ý]/);
-						if (lowerMatch) {
-							const lowerIdx = word.word.search(/[a-zà-ÿ][A-ZÀ-Ý]/);
-							if (lowerIdx !== -1) {
-								suggestion =
-									word.word.slice(0, lowerIdx + 1) +
-									word.word.slice(lowerIdx + 1).toLowerCase();
-							}
-						}
-					}
+				} else if (wordIndex > 0 && hasCapitalInMiddle) {
+					issueType = "capitalization";
+					message = t(
+						"grammarCheck.capitalInMiddle",
+						"Word has capital letters in middle",
+					);
 				}
 
 				if (message) {
-					result.push({
-						type: issueType,
-						lineId: line.id,
-						lineIndex: mainLineCount,
-						isBackground,
-						wordId,
-						word: word.word,
-						message,
-						suggestion,
-					});
+				result.push({
+					type: issueType,
+					lineId: line.id,
+					lineIndex: mainLineCount,
+					isBackground,
+					wordId,
+					wordIndex,
+					word: word.word,
+					wordSnapshot: {
+						...word,
+						ruby: word.ruby?.map((rubyWord) => ({ ...rubyWord })),
+					},
+					message,
+					suggestion,
+				});
 				}
 			});
 		});
@@ -190,7 +184,11 @@ export const GrammarCheckDialog = () => {
 			if (line && line.words) {
 				const wordIndex = line.words.findIndex((w) => w.id === issue.wordId);
 				if (wordIndex !== -1 && line.words[wordIndex]) {
-					line.words[wordIndex].word = issue.suggestion!;
+					if (issue.suggestion === "__REMOVE_REPEATED_WORD__") {
+						line.words.splice(wordIndex, 1);
+					} else {
+						line.words[wordIndex].word = issue.suggestion!;
+					}
 				}
 			}
 		});
@@ -245,6 +243,11 @@ export const GrammarCheckDialog = () => {
 		editLyricLines((lyrics) => {
 			const line = lyrics.lyricLines[lineIndex];
 			if (line && line.words) {
+				if (issue.suggestion === "__REMOVE_REPEATED_WORD__") {
+					line.words.splice(issue.wordIndex, 0, issue.wordSnapshot);
+					return;
+				}
+
 				const wordIndex = line.words.findIndex((w) => w.id === issue.wordId);
 				if (wordIndex !== -1 && line.words[wordIndex]) {
 					line.words[wordIndex].word = issue.word;
