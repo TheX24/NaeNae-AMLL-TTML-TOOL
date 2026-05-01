@@ -79,8 +79,8 @@ export const LyricLineMenu = ({ lineIndex }: { lineIndex: number }) => {
 				{t("contextMenu.duetLyric", "对唱歌词")}
 			</ContextMenu.CheckboxItem>
 			<ContextMenu.Separator />
-			<ContextMenu.Item onSelect={onSeekToHere}>
-				{t("contextMenu.seekToHere", "Seek to here")}
+			<ContextMenu.Item onSelect={setOffsetToHere}>
+				{t("contextMenu.moveLineToPlayhead", "Move line to playhead")}
 			</ContextMenu.Item>
 			<ContextMenu.Separator />
 			<ContextMenu.Item
@@ -112,9 +112,6 @@ export const LyricLineMenu = ({ lineIndex }: { lineIndex: number }) => {
 			</ContextMenu.Item>
 			<ContextMenu.Item onSelect={combineLines} disabled={!combineEnabled}>
 				{t("contextMenu.combineLine", "合并行")}
-			</ContextMenu.Item>
-			<ContextMenu.Item onSelect={setOffsetToHere}>
-				{t("contextMenu.setOffsetToHere", "Set offset to here")}
 			</ContextMenu.Item>
 			<ContextMenu.Item
 				onSelect={() => {

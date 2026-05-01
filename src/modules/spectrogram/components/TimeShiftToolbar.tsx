@@ -77,14 +77,7 @@ export const TimeShiftToolbar: FC = () => {
 		return -1;
 	}, [lyricLines.lyricLines, previewScope, selectedLines, previewRange]);
 
-	const handleSeekToAffected = useCallback(() => {
-		const firstIndex = getFirstAffectedIndex();
-		if (firstIndex !== -1 && lyricLines.lyricLines[firstIndex]) {
-			audioEngine.seekMusic(lyricLines.lyricLines[firstIndex].startTime / 1000);
-		}
-	}, [getFirstAffectedIndex, lyricLines.lyricLines]);
-
-	const handleSetFromCurrent = useCallback(() => {
+	const handleSnapToPlayhead = useCallback(() => {
 		const firstIndex = getFirstAffectedIndex();
 		if (firstIndex !== -1 && lyricLines.lyricLines[firstIndex]) {
 			const targetLine = lyricLines.lyricLines[firstIndex];
@@ -316,8 +309,8 @@ export const TimeShiftToolbar: FC = () => {
 						>
 							<TextField.Slot side="right">ms</TextField.Slot>
 						</TextField.Root>
-						<Tooltip content={t("timeShiftDialog.setFromCurrent", "Set from current playback time")}>
-							<IconButton size="1" variant="ghost" onClick={handleSetFromCurrent}>
+						<Tooltip content={t("timeShiftDialog.snapToPlayhead", "Snap start of affected lines to current playback time")}>
+							<IconButton size="1" variant="ghost" onClick={handleSnapToPlayhead}>
 								<ArrowRightRegular />
 							</IconButton>
 						</Tooltip>
@@ -340,11 +333,6 @@ export const TimeShiftToolbar: FC = () => {
 								<Select.Item value="custom">{t("timeShiftDialog.scope.custom", "Custom")}</Select.Item>
 							</Select.Content>
 						</Select.Root>
-						<Tooltip content={t("timeShiftDialog.seekToStart", "Seek playback to start of affected lines")}>
-							<IconButton size="1" variant="ghost" onClick={handleSeekToAffected}>
-								<PlayFilled fontSize={14} />
-							</IconButton>
-						</Tooltip>
 					</Flex>
 
 					<Box className={styles.divider} />
