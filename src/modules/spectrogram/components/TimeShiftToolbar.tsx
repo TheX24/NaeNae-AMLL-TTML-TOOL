@@ -57,12 +57,47 @@ export const TimeShiftToolbar: FC = () => {
 		setPreviewOffset((prev) => prev + delta);
 	}, [setPreviewOffset]);
 
+	const getFirstAffectedIndex = useCallback(() => {
+		const lines = lyricLines.lyricLines;
+		if (previewScope === "all") return 0;
+		if (previewScope === "selected" || previewScope === "selected-following") {
+			let firstSelectedIndex = -1;
+			lines.forEach((l, index) => {
+				if (selectedLines.has(l.id)) {
+					if (firstSelectedIndex === -1 || index < firstSelectedIndex) {
+						firstSelectedIndex = index;
+					}
+				}
+			});
+			return firstSelectedIndex;
+		}
+		if (previewScope === "custom") {
+			return previewRange[0] - 1;
+		}
+		return -1;
+	}, [lyricLines.lyricLines, previewScope, selectedLines, previewRange]);
+
+	const handleSeekToAffected = useCallback(() => {
+		const firstIndex = getFirstAffectedIndex();
+		if (firstIndex !== -1 && lyricLines.lyricLines[firstIndex]) {
+			audioEngine.seekMusic(lyricLines.lyricLines[firstIndex].startTime / 1000);
+		}
+	}, [getFirstAffectedIndex, lyricLines.lyricLines]);
+
+	const handleSetFromCurrent = useCallback(() => {
+		const firstIndex = getFirstAffectedIndex();
+		if (firstIndex !== -1 && lyricLines.lyricLines[firstIndex]) {
+			const targetLine = lyricLines.lyricLines[firstIndex];
+			setPreviewOffset(currentTime - targetLine.startTime);
+		}
+	}, [currentTime, getFirstAffectedIndex, lyricLines.lyricLines, setPreviewOffset]);
+
 	// Default scope to "selected" if lines are selected
 	useEffect(() => {
 		if (previewActive && selectedLines.size > 0 && previewScope === "all") {
 			setPreviewScope("selected");
 		}
-	}, [previewActive]);
+	}, [previewActive, selectedLines.size, previewScope, setPreviewScope]);
 
 	if (!previewActive) return null;
 
@@ -158,41 +193,6 @@ export const TimeShiftToolbar: FC = () => {
 		setPreviewActive(false);
 		setDialogVisible(false);
 		setPreviewOffset(0);
-	};
-
-	const getFirstAffectedIndex = useCallback(() => {
-		const lines = lyricLines.lyricLines;
-		if (previewScope === "all") return 0;
-		if (previewScope === "selected" || previewScope === "selected-following") {
-			let firstSelectedIndex = -1;
-			lines.forEach((l, index) => {
-				if (selectedLines.has(l.id)) {
-					if (firstSelectedIndex === -1 || index < firstSelectedIndex) {
-						firstSelectedIndex = index;
-					}
-				}
-			});
-			return firstSelectedIndex;
-		}
-		if (previewScope === "custom") {
-			return previewRange[0] - 1;
-		}
-		return -1;
-	}, [lyricLines.lyricLines, previewScope, selectedLines, previewRange]);
-
-	const handleSeekToAffected = () => {
-		const firstIndex = getFirstAffectedIndex();
-		if (firstIndex !== -1 && lyricLines.lyricLines[firstIndex]) {
-			audioEngine.seekMusic(lyricLines.lyricLines[firstIndex].startTime / 1000);
-		}
-	};
-
-	const handleSetFromCurrent = () => {
-		const firstIndex = getFirstAffectedIndex();
-		if (firstIndex !== -1 && lyricLines.lyricLines[firstIndex]) {
-			const targetLine = lyricLines.lyricLines[firstIndex];
-			setPreviewOffset(currentTime - targetLine.startTime);
-		}
 	};
 
 	const startAdjusting = (delta: number) => {
