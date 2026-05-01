@@ -52,9 +52,8 @@ import {
 	keyBindingTriggerModeAtom,
 } from "$/utils/keybindings";
 
-const languageOptions: readonly string[] = Object.keys(resources);
-
 export const SettingsCommonTab = () => {
+	const languageOptions: readonly string[] = Object.keys(resources);
 	const [layoutMode, setLayoutMode] = useAtom(layoutModeAtom);
 	const [syncJudgeMode, setSyncJudgeMode] = useAtom(syncJudgeModeAtom);
 	const [keyBindingTriggerMode, setKeyBindingTriggerMode] = useAtom(
@@ -84,6 +83,7 @@ export const SettingsCommonTab = () => {
 	const currentLanguage = i18n.resolvedLanguage || i18n.language;
 
 	const getLanguageName = (code: string) => {
+		if (code === "lolcat") return "Lolcat";
 		try {
 			interface DisplayNamesLike {
 				new (
