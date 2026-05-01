@@ -8,6 +8,7 @@ import { lyricLinesAtom, selectedLinesAtom } from "$/states/main";
 import { type LyricLine, newLyricLine, newLyricWord } from "$/types/ttml";
 import { globalEnableInsertAtom } from "./lyric-line-view-states";
 import { currentTimeAtom } from "$/modules/audio/states";
+import { audioEngine } from "$/modules/audio/audio-engine";
 
 const selectedLinesSizeAtom = atom((get) => get(selectedLinesAtom).size);
 
@@ -77,6 +78,10 @@ export const LyricLineMenu = ({ lineIndex }: { lineIndex: number }) => {
 			>
 				{t("contextMenu.duetLyric", "对唱歌词")}
 			</ContextMenu.CheckboxItem>
+			<ContextMenu.Separator />
+			<ContextMenu.Item onSelect={onSeekToHere}>
+				{t("contextMenu.seekToHere", "Seek to here")}
+			</ContextMenu.Item>
 			<ContextMenu.Separator />
 			<ContextMenu.Item
 				onSelect={() => {
@@ -189,5 +194,12 @@ export const LyricLineMenu = ({ lineIndex }: { lineIndex: number }) => {
 				}
 			}
 		});
+	}
+
+	function onSeekToHere() {
+		const line = lineObjs.lyricLines[lineIndex];
+		if (line) {
+			audioEngine.seekMusic(line.startTime / 1000);
+		}
 	}
 };
