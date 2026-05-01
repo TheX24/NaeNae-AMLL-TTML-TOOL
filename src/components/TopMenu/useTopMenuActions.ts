@@ -216,17 +216,17 @@ export const useTopMenuActions = () => {
 
 	const onOpenGitHub = useCallback(async () => {
 		if (import.meta.env.TAURI_ENV_PLATFORM) {
-			await open("https://github.com/amll-dev/amll-ttml-tool");
+			await open("https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL");
 		} else {
-			window.open("https://github.com/amll-dev/amll-ttml-tool");
+			window.open("https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL");
 		}
 	}, []);
 
 	const onOpenWiki = useCallback(async () => {
 		if (import.meta.env.TAURI_ENV_PLATFORM) {
-			await open("https://github.com/amll-dev/amll-ttml-tool/wiki");
+			await open("https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL/wiki");
 		} else {
-			window.open("https://github.com/amll-dev/amll-ttml-tool/wiki");
+			window.open("https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL/wiki");
 		}
 	}, []);
 

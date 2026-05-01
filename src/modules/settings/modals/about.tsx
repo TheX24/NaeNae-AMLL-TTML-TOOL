@@ -52,7 +52,7 @@ export const SettingsAboutTab = () => {
 										t("aboutModal.unknown", "Unknown")
 									) : (
 										<Link
-											href={`https://github.com/amll-dev/amll-ttml-tool/commit/${GIT_COMMIT}`}
+											href={`https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL/commit/${GIT_COMMIT}`}
 											target="_blank"
 											rel="noreferrer"
 										>
@@ -79,7 +79,7 @@ export const SettingsAboutTab = () => {
 					<Flex gap="3" mt="1">
 						<Button
 							variant="soft"
-							onClick={() => open("https://github.com/NaeNaeTart/Vercel-AMLL-TTML-TOOL")}
+							onClick={() => open("https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL")}
 						>
 							{t("aboutModal.github", "GitHub Repository")}
 						</Button>

@@ -7,6 +7,8 @@ import { lyricLinesAtom, selectedLinesAtom } from "$/states/main";
 
 import { type LyricLine, newLyricLine, newLyricWord } from "$/types/ttml";
 import { globalEnableInsertAtom } from "./lyric-line-view-states";
+import { currentTimeAtom } from "$/modules/audio/states";
+import { audioEngine } from "$/modules/audio/audio-engine";
 
 const selectedLinesSizeAtom = atom((get) => get(selectedLinesAtom).size);
 
@@ -17,6 +19,7 @@ export const LyricLineMenu = ({ lineIndex }: { lineIndex: number }) => {
 	const selectedLinesSize = useAtomValue(selectedLinesSizeAtom);
 	const selectedLines = useAtomValue(selectedLinesAtom);
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
+	const currentTime = useAtomValue(currentTimeAtom);
 
 	const lineObjs = useAtomValue(lyricLinesAtom);
 	const selectedLineObjs = lineObjs.lyricLines.filter((line) =>
@@ -75,6 +78,10 @@ export const LyricLineMenu = ({ lineIndex }: { lineIndex: number }) => {
 			>
 				{t("contextMenu.duetLyric", "对唱歌词")}
 			</ContextMenu.CheckboxItem>
+			<ContextMenu.Separator />
+			<ContextMenu.Item onSelect={setOffsetToHere}>
+				{t("contextMenu.moveLineToPlayhead", "Move line to playhead")}
+			</ContextMenu.Item>
 			<ContextMenu.Separator />
 			<ContextMenu.Item
 				onSelect={() => {
@@ -156,5 +163,40 @@ export const LyricLineMenu = ({ lineIndex }: { lineIndex: number }) => {
 				return [line, newLine];
 			});
 		});
+	}
+
+	function setOffsetToHere() {
+		editLyricLines((state) => {
+			let targetLines: LyricLine[] = [];
+			if (selectedLinesSize === 0) {
+				const line = state.lyricLines[lineIndex];
+				if (line) targetLines = [line];
+			} else {
+				targetLines = state.lyricLines.filter((line) =>
+					selectedLines.has(line.id),
+				);
+			}
+
+			if (targetLines.length === 0 || !targetLines[0]) return;
+
+			const baseStartTime = targetLines[0].startTime;
+			const offset = currentTime - baseStartTime;
+
+			for (const line of targetLines) {
+				line.startTime += offset;
+				line.endTime += offset;
+				for (const word of line.words) {
+					word.startTime += offset;
+					word.endTime += offset;
+				}
+			}
+		});
+	}
+
+	function onSeekToHere() {
+		const line = lineObjs.lyricLines[lineIndex];
+		if (line) {
+			audioEngine.seekMusic(line.startTime / 1000);
+		}
 	}
 };

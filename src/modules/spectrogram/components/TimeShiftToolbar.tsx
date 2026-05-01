@@ -5,6 +5,7 @@ import {
 	DismissRegular,
 	CopyRegular,
 	ArrowRightRegular,
+	PlayFilled,
 } from "@fluentui/react-icons";
 import {
 	Button,
@@ -17,6 +18,7 @@ import {
 	Select,
 	TextField,
 	SegmentedControl,
+	Tooltip,
 } from "@radix-ui/themes";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
@@ -30,6 +32,8 @@ import {
 	timeShiftDialogAtom,
 } from "$/states/dialogs.ts";
 import { lyricLinesAtom, selectedLinesAtom } from "$/states/main.ts";
+import { currentTimeAtom } from "$/modules/audio/states/index.ts";
+import { audioEngine } from "$/modules/audio/audio-engine.ts";
 import styles from "./TimeShiftToolbar.module.css";
 import { uid } from "uid";
 
@@ -44,6 +48,7 @@ export const TimeShiftToolbar: FC = () => {
 	const lyricLines = useAtomValue(lyricLinesAtom);
 	const selectedLines = useAtomValue(selectedLinesAtom);
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
+	const currentTime = useAtomValue(currentTimeAtom);
 
 	const [isCopyMode, setIsCopyMode] = useState(false);
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,6 +56,34 @@ export const TimeShiftToolbar: FC = () => {
 	const adjustOffset = useCallback((delta: number) => {
 		setPreviewOffset((prev) => prev + delta);
 	}, [setPreviewOffset]);
+
+	const getFirstAffectedIndex = useCallback(() => {
+		const lines = lyricLines.lyricLines;
+		if (previewScope === "all") return 0;
+		if (previewScope === "selected" || previewScope === "selected-following") {
+			let firstSelectedIndex = -1;
+			lines.forEach((l, index) => {
+				if (selectedLines.has(l.id)) {
+					if (firstSelectedIndex === -1 || index < firstSelectedIndex) {
+						firstSelectedIndex = index;
+					}
+				}
+			});
+			return firstSelectedIndex;
+		}
+		if (previewScope === "custom") {
+			return previewRange[0] - 1;
+		}
+		return -1;
+	}, [lyricLines.lyricLines, previewScope, selectedLines, previewRange]);
+
+	const handleSnapToPlayhead = useCallback(() => {
+		const firstIndex = getFirstAffectedIndex();
+		if (firstIndex !== -1 && lyricLines.lyricLines[firstIndex]) {
+			const targetLine = lyricLines.lyricLines[firstIndex];
+			setPreviewOffset(currentTime - targetLine.startTime);
+		}
+	}, [currentTime, getFirstAffectedIndex, lyricLines.lyricLines, setPreviewOffset]);
 
 	// Default scope to "selected" if lines are selected
 	useEffect(() => {
@@ -276,6 +309,11 @@ export const TimeShiftToolbar: FC = () => {
 						>
 							<TextField.Slot side="right">ms</TextField.Slot>
 						</TextField.Root>
+						<Tooltip content={t("timeShiftDialog.snapToPlayhead", "Snap start of affected lines to current playback time")}>
+							<IconButton size="1" variant="ghost" onClick={handleSnapToPlayhead}>
+								<ArrowRightRegular />
+							</IconButton>
+						</Tooltip>
 					</Flex>
 
 					<Box className={styles.divider} />
