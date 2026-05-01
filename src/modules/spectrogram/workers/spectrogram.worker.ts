@@ -16,7 +16,7 @@ async function initializeWasm() {
 	if (!wasmInitialized) {
 		wasmInitialized = (async () => {
 			await init();
-			await initThreadPool(navigator.hardwareConcurrency);
+			await initThreadPool(Math.max(1, navigator.hardwareConcurrency || 1));
 		})();
 	}
 	await wasmInitialized;

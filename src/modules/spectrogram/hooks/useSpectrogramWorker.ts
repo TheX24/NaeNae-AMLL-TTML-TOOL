@@ -14,14 +14,17 @@ export type TileEntry = {
 	height: number;
 	gain: number;
 	paletteId: string;
+	fftSize?: number;
 };
 
 class SpectrogramWorkerClient {
 	private worker: SpectrogramWorker;
 	private reqIdCounter = 0;
+	private audioGeneration = 0;
 	private pendingRequests = new Map<
 		number,
 		{
+			generation: number;
 			resolve: (bmp: ImageBitmap) => void;
 			reject: (err: Error) => void;
 		}
@@ -40,6 +43,11 @@ class SpectrogramWorkerClient {
 		if (msg.type === "TILE_READY") {
 			const request = this.pendingRequests.get(msg.reqId);
 			if (request) {
+				if (request.generation !== this.audioGeneration) {
+					msg.imageBitmap.close();
+					this.pendingRequests.delete(msg.reqId);
+					return;
+				}
 				request.resolve(msg.imageBitmap);
 				this.pendingRequests.delete(msg.reqId);
 			} else {
@@ -57,8 +65,9 @@ class SpectrogramWorkerClient {
 
 	public getTile(params: TileGenerationParams): Promise<ImageBitmap> {
 		const reqId = this.reqIdCounter++;
+		const generation = this.audioGeneration;
 		return new Promise((resolve, reject) => {
-			this.pendingRequests.set(reqId, { resolve, reject });
+			this.pendingRequests.set(reqId, { generation, resolve, reject });
 			this.worker.postMessage({
 				type: "GET_TILE",
 				reqId,
@@ -68,6 +77,11 @@ class SpectrogramWorkerClient {
 	}
 
 	public initAudio(audioData: Float32Array, sampleRate: number) {
+		this.audioGeneration += 1;
+		for (const [reqId, request] of this.pendingRequests.entries()) {
+			request.reject(new Error("Audio buffer changed"));
+			this.pendingRequests.delete(reqId);
+		}
 		this.worker.postMessage({ type: "INIT", audioData, sampleRate }, [
 			audioData.buffer,
 		]);
@@ -148,7 +162,7 @@ export const useSpectrogramWorker = (
 				cacheEntry.height !== params.height ||
 				cacheEntry.gain !== params.gain ||
 				cacheEntry.paletteId !== params.paletteId ||
-				(cacheEntry as any).fftSize !== params.fftSize;
+				cacheEntry.fftSize !== params.fftSize;
 
 			if (isStale && !activeRequests.current.has(requestFingerprint)) {
 				activeRequests.current.add(requestFingerprint);
@@ -163,7 +177,7 @@ export const useSpectrogramWorker = (
 						gain: params.gain,
 						paletteId: params.paletteId,
 						fftSize: params.fftSize,
-					} as any);
+					});
 
 					setLastTileTimestamp(Date.now());
 				} catch (err) {

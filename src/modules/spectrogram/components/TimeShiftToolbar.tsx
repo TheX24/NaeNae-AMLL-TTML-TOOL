@@ -91,7 +91,7 @@ export const TimeShiftToolbar: FC = () => {
 		if (previewActive && selectedLines.size > 0 && previewScope === "all") {
 			setPreviewScope("selected");
 		}
-	}, [previewActive, selectedLines.size, previewScope, setPreviewScope]);
+	}, [previewActive, selectedLines, previewScope, setPreviewScope]);
 
 	if (!previewActive) return null;
 
