@@ -8,7 +8,7 @@ export function ChangelogDialog() {
 	const [isOpen, setIsOpen] = useAtom(changelogDialogAtom);
 
 	const openGitHub = async () => {
-		const repoUrl = "https://github.com/spicylyrics/ttml-tool/commits/main";
+		const repoUrl = "https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL/commits/main";
 		if (import.meta.env.TAURI_ENV_PLATFORM) {
 			await open(repoUrl);
 		} else {
@@ -37,6 +37,27 @@ export function ChangelogDialog() {
 
 				<ScrollArea type="always" scrollbars="vertical" style={{ height: "calc(100% - 60px)" }}>
 					<Flex direction="column" gap="5" pr="4">
+						<Box>
+							<Heading size="4" mb="2" color="ruby">v0.6.0 Updates (Repository Migration & Snap Sync)</Heading>
+							<Flex direction="column" gap="3">
+								<Text size="2">
+									<strong>Project Migration:</strong> The repository has officially moved to <code>NaeNaeTart/NaeNae-AMLL-TTML-TOOL</code>. All documentation, license headers, and internal links have been standardized to reflect this change.
+								</Text>
+								<Text size="2">
+									<strong>Snap to Playhead:</strong> Added a high-precision synchronization tool in the Time Shift toolbar. Align your lyrics instantly by snapping line start times to your current audio playback position.
+								</Text>
+								<Text size="2">
+									<strong>Circular Snap Button:</strong> Refined the Snap tool with a dedicated circular "Record" icon for a cleaner, more intuitive synchronization workflow.
+								</Text>
+								<Text size="2">
+									<strong>Context Menu Enhancements:</strong> Added "Move line to playhead" to the lyric line right-click menu and optimized existing sync actions for better usability.
+								</Text>
+								<Text size="2">
+									<strong>Repository Cleanup:</strong> Removed legacy lockfiles and workspace definitions to optimize the environment for modern package managers like pnpm.
+								</Text>
+							</Flex>
+						</Box>
+
 						<Box>
 							<Heading size="4" mb="2" color="teal">v0.5.1 Updates (Spectrogram & UI)</Heading>
 							<Flex direction="column" gap="3">

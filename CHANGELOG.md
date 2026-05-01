@@ -3,6 +3,23 @@
 All notable changes to the AMLL TTML Tool are documented here.
 
 ---
+6: 
+7: ## [0.5.0] - 2026-05-01
+8: 
+9: ### ✨ New Features
+10: 
+11: - **Snap to Playhead**: Added a new "Snap to Playhead" tool in the Time Shift toolbar. This allows for instant synchronization by moving the start of affected lyric lines to the current audio playback position with a single click.
+12: - **Enhanced Lyric Line Context Menu**: Added a "Move line to playhead" action to the right-click menu, providing a quick way to align individual lines without opening the full toolbar.
+13: 
+14: ### 🛠️ Maintenance & Infrastructure
+15: 
+16: - **Project Migration**: Successfully migrated the repository from legacy locations to the new primary home at `NaeNaeTart/NaeNae-AMLL-TTML-TOOL`.
+17: - **Global Repository Link Update**: Standardized all internal and external links, including documentation, about dialogs, and configuration files, to point to the new repository.
+18: - **License Header Standardization**: Executed a global update of license headers across the entire codebase to ensure consistent compliance with the GPL-3.0 license.
+19: - **Repository Cleanup**: Removed redundant `package-lock.json`, legacy workspace files, and temporary build logs to keep the repository clean and optimized for `pnpm`.
+20: - **Improved .gitignore**: Updated exclusion rules to handle modern editor workspace files and temporary development directories.
+21: 
+22: ---
 
 ## [0.4.2] - 2026-04-22
 
