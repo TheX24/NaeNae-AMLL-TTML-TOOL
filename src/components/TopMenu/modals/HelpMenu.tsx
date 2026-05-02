@@ -3,7 +3,7 @@ import { Toolbar } from "radix-ui";
 import type { CSSProperties } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSetAtom } from "jotai";
-import { changelogDialogAtom } from "$/states/dialogs.ts";
+import { changelogDialogAtom, whatsNewDialogAtom } from "$/states/dialogs.ts";
 import { useTopMenuActions } from "../useTopMenuActions";
 
 type HelpMenuProps = {
@@ -15,6 +15,7 @@ const HelpMenuItems = () => {
 	const { t } = useTranslation();
 	const menu = useTopMenuActions();
 	const setChangelogOpen = useSetAtom(changelogDialogAtom);
+	const setWhatsNewOpen = useSetAtom(whatsNewDialogAtom);
 
 	return (
 		<>
@@ -23,6 +24,9 @@ const HelpMenuItems = () => {
 				{t("topBar.menu.helpDoc", "使用说明")}
 			</DropdownMenu.Item>
 			<DropdownMenu.Separator />
+			<DropdownMenu.Item onSelect={() => setWhatsNewOpen(true)}>
+				What's New
+			</DropdownMenu.Item>
 			<DropdownMenu.Item onSelect={() => setChangelogOpen(true)}>
 				Changelog & Updates
 			</DropdownMenu.Item>

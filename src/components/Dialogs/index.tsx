@@ -15,6 +15,7 @@ import { AdvancedSegmentationDialog } from "$/modules/segmentation/components/Ad
 import { SplitWordDialog } from "$/modules/segmentation/components/split-word.tsx";
 import { SettingsDialog } from "$/modules/settings/modals/index.tsx";
 import { ChangelogDialog } from "./changelog.tsx";
+import { WhatsNewDialog } from "./whats-new.tsx";
 import { ConfirmationDialog } from "./confirmation.tsx";
 import { Mp3ConversionDialog } from "./mp3-conversion.tsx";
 import { FontSelectionDialog } from "$/modules/settings/modals/FontSelectionDialog.tsx";
@@ -42,6 +43,7 @@ export const Dialogs = () => {
 			<GeniusSearchDialog />
 			<GeniusImportLyricsDialog />
 			<ChangelogDialog />
+			<WhatsNewDialog />
 			<FontSelectionDialog />
 			<UrbanDictionaryDialog />
 		</>
