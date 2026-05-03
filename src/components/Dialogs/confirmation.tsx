@@ -13,6 +13,7 @@ export const ConfirmationDialog = () => {
 	};
 
 	const handleCancel = () => {
+		dialogState.onCancel?.();
 		setDialogState({ ...dialogState, open: false });
 	};
 
@@ -23,10 +24,10 @@ export const ConfirmationDialog = () => {
 				<Dialog.Description>{dialogState.description}</Dialog.Description>
 				<Flex gap="3" mt="4" justify="end">
 					<Button variant="soft" color="gray" onClick={handleCancel}>
-						{t("confirmDialog.cancel", "取消")}
+						{dialogState.cancelText || t("confirmDialog.cancel", "取消")}
 					</Button>
 					<Button onClick={handleConfirm}>
-						{t("confirmDialog.confirm", "确认")}
+						{dialogState.confirmText || t("confirmDialog.confirm", "确认")}
 					</Button>
 				</Flex>
 			</Dialog.Content>

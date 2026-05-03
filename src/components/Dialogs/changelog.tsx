@@ -38,6 +38,27 @@ export function ChangelogDialog() {
 				<ScrollArea type="always" scrollbars="vertical" style={{ height: "calc(100% - 60px)" }}>
 					<Flex direction="column" gap="5" pr="4">
 						<Box>
+							<Heading size="4" mb="2" color="gold">v0.6.2 Updates (Sync Accuracy & Export Validation)</Heading>
+							<Flex direction="column" gap="3">
+								<Text size="2">
+									<strong>Millisecond Sync Precision:</strong> Implemented high-precision audio time interpolation and eliminated rounding jitter in the sync engine. Timing errors of 1-3ms are now fully resolved.
+								</Text>
+								<Text size="2">
+									<strong>Export Validation:</strong> Added an automated sync health check when exporting. The tool now detects untimed lyrics and offers to jump directly to errors for correction.
+								</Text>
+								<Text size="2">
+									<strong>Genius Tag Filtering:</strong> The "Process Lyrics" tool now automatically strips section headers (e.g., [Chorus]) and removes empty lines for a cleaner import.
+								</Text>
+								<Text size="2">
+									<strong>Improved Dialogs:</strong> Enhanced the confirmation dialog system with support for custom action labels and better navigation between error states.
+								</Text>
+								<Text size="2">
+									<strong>Standardized Defaults:</strong> Updated the default preview mode to "Standard" for better initial clarity on new projects.
+								</Text>
+							</Flex>
+						</Box>
+
+						<Box>
 							<Heading size="4" mb="2" color="teal">v0.6.1 Updates (Visual Performance Audit)</Heading>
 							<Flex direction="column" gap="3">
 								<Text size="2">

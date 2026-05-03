@@ -11,6 +11,8 @@ import {
 	segmentLyricLines,
 	segmentWord,
 } from "$/modules/segmentation/utils/segmentation";
+import { audioEngine } from "$/modules/audio/audio-engine";
+import { currentTimeAtom } from "$/modules/audio/states/index.ts";
 import { useSegmentationConfig } from "$/modules/segmentation/utils/useSegmentationConfig";
 import {
 	advancedSegmentationDialogAtom,
@@ -167,36 +169,108 @@ export const useTopMenuActions = () => {
 	}, [openFile]);
 
 	const onSaveFile = useCallback(async () => {
-		try {
-			const ttmlText = exportTTMLText(store.get(lyricLinesAtom));
-			const savedName = await saveFile(ttmlText, {
-				suggestedName: saveFileName,
-				types: [
-					{
-						description: "TTML Files",
-						accept: { "application/ttml+xml": [".ttml"] },
-					},
-				],
-			});
-			if (savedName) setSaveFileName(savedName);
-		} catch (e) {
-			error("Failed to save TTML file", e);
+		const action = async () => {
+			try {
+				const ttmlText = exportTTMLText(store.get(lyricLinesAtom));
+				const savedName = await saveFile(ttmlText, {
+					suggestedName: saveFileName,
+					types: [
+						{
+							description: "TTML Files",
+							accept: { "application/ttml+xml": [".ttml"] },
+						},
+					],
+				});
+				if (savedName) setSaveFileName(savedName);
+			} catch (e) {
+				error("Failed to save TTML file", e);
+			}
+		};
+
+		const lyrics = store.get(lyricLinesAtom);
+		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.length > 0);
+		let untimedWord: LyricWord | undefined;
+		let untimedLine: import("$/types/ttml").LyricLine | undefined;
+
+		if (firstUntimedLine) {
+			untimedLine = firstUntimedLine;
+			untimedWord = firstUntimedLine.words[0];
+		} else {
+			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0));
+			if (untimedLine) {
+				untimedWord = untimedLine.words.find((w) => w.endTime === 0);
+			}
 		}
-	}, [saveFileName, store, setSaveFileName]);
+
+		if (untimedLine && untimedWord) {
+			setConfirmDialog({
+				open: true,
+				title: t("confirmDialog.untimedLyrics.title", "Untimed Lyrics Detected"),
+				description: t("confirmDialog.untimedLyrics.description", "There is an untimed line or word in your lyrics. Would you like to fix it or export anyway?"),
+				confirmText: t("confirmDialog.untimedLyrics.exportAnyway", "Export Anyway"),
+				cancelText: t("confirmDialog.untimedLyrics.fixIt", "Fix It"),
+				onConfirm: action,
+				onCancel: () => {
+					store.set(selectedLinesAtom, new Set([untimedLine!.id]));
+					store.set(selectedWordsAtom, new Set([untimedWord!.id]));
+					audioEngine.seekMusic(untimedLine!.startTime / 1000);
+					store.set(currentTimeAtom, untimedLine!.startTime);
+				}
+			});
+		} else {
+			action();
+		}
+	}, [saveFileName, store, setSaveFileName, setConfirmDialog, t]);
 
 	const onOpenHistoryRestore = useCallback(() => {
 		setHistoryRestoreDialog(true);
 	}, [setHistoryRestoreDialog]);
 
 	const onSaveFileToClipboard = useCallback(async () => {
-		try {
-			const lyric = store.get(lyricLinesAtom);
-			const ttml = exportTTMLText(lyric);
-			await navigator.clipboard.writeText(ttml);
-		} catch (e) {
-			error("Failed to save TTML file into clipboard", e);
+		const action = async () => {
+			try {
+				const lyric = store.get(lyricLinesAtom);
+				const ttml = exportTTMLText(lyric);
+				await navigator.clipboard.writeText(ttml);
+			} catch (e) {
+				error("Failed to save TTML file into clipboard", e);
+			}
+		};
+
+		const lyrics = store.get(lyricLinesAtom);
+		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.length > 0);
+		let untimedWord: LyricWord | undefined;
+		let untimedLine: import("$/types/ttml").LyricLine | undefined;
+
+		if (firstUntimedLine) {
+			untimedLine = firstUntimedLine;
+			untimedWord = firstUntimedLine.words[0];
+		} else {
+			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0));
+			if (untimedLine) {
+				untimedWord = untimedLine.words.find((w) => w.endTime === 0);
+			}
 		}
-	}, [store]);
+
+		if (untimedLine && untimedWord) {
+			setConfirmDialog({
+				open: true,
+				title: t("confirmDialog.untimedLyrics.title", "Untimed Lyrics Detected"),
+				description: t("confirmDialog.untimedLyrics.description", "There is an untimed line or word in your lyrics. Would you like to fix it or export anyway?"),
+				confirmText: t("confirmDialog.untimedLyrics.exportAnyway", "Export Anyway"),
+				cancelText: t("confirmDialog.untimedLyrics.fixIt", "Fix It"),
+				onConfirm: action,
+				onCancel: () => {
+					store.set(selectedLinesAtom, new Set([untimedLine!.id]));
+					store.set(selectedWordsAtom, new Set([untimedWord!.id]));
+					audioEngine.seekMusic(untimedLine!.startTime / 1000);
+					store.set(currentTimeAtom, untimedLine!.startTime);
+				}
+			});
+		} else {
+			action();
+		}
+	}, [store, setConfirmDialog, t]);
 
 	const onSubmitToAMLLDB = useCallback(() => {
 		store.set(submitToAMLLDBDialogAtom, true);

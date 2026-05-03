@@ -131,13 +131,13 @@ export const SyncKeyBinding: FC = () => {
 			const syncTimeOffset = store.get(syncTimeOffsetAtom);
 			const processingDelay = performance.now() - evt.triggerTime;
 			const audioTimeNow =
-				audioEngine.musicCurrentTime * 1000 -
+				audioEngine.interpolatedCurrentTime * 1000 -
 				processingDelay * audioEngine.musicPlayBackRate;
 
 			const syncJudgeMode = store.get(syncJudgeModeAtom);
 			if (syncJudgeMode === SyncJudgeMode.FirstKeyDownTimeLegacy) {
-				return (
-					Math.max(0, audioTimeNow - evt.downTimeOffset + syncTimeOffset) | 0
+				return Math.round(
+					Math.max(0, audioTimeNow - evt.downTimeOffset + syncTimeOffset),
 				);
 			}
 			let timeAdjustment = 0;
@@ -154,7 +154,7 @@ export const SyncKeyBinding: FC = () => {
 				}
 				timeAdjustment *= audioEngine.musicPlayBackRate;
 			}
-			return Math.max(0, audioTimeNow + timeAdjustment + syncTimeOffset) | 0;
+			return Math.round(Math.max(0, audioTimeNow + timeAdjustment + syncTimeOffset));
 		},
 		[store],
 	);
