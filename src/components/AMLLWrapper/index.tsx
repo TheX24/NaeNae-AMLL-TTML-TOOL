@@ -1,4 +1,3 @@
-import { Flex } from "@radix-ui/themes";
 import classNames from "classnames";
 import { 
 	BackgroundRender, 
@@ -26,14 +25,12 @@ import {
 	selectedLinesAtom,
 } from "$/states/main.ts";
 import { 
-	accentColorAtom,
 	useCustomAccentAtom,
 	customAccentColorAtom,
 } from "$/modules/settings/states/index.ts";
 import { customBackgroundImageAtom } from "$/modules/settings/modals/customBackground";
 import styles from "./index.module.css";
 
-const zeroAtom = atom(0);
 const displayTimeAtom = atom(0);
 
 /**
@@ -300,7 +297,7 @@ export const AMLLWrapper = memo(({ variant }: { variant?: "standard" | "toxi" })
 
 	const isPlaying = useAtomValue(audioPlayingAtom);
 	const albumImg = useAtomValue(customBackgroundImageAtom);
-	const accentColor = useAtomValue(accentColorAtom);
+
 	const useCustomAccent = useAtomValue(useCustomAccentAtom);
 	const customAccentColor = useAtomValue(customAccentColorAtom);
 
@@ -322,10 +319,10 @@ export const AMLLWrapper = memo(({ variant }: { variant?: "standard" | "toxi" })
 				<BackgroundRender 
 					key={albumImg || "default"}
 					album={albumImg || undefined}
-					colors={fallbackColors}
-					{/* PERF: Only animate when audio is actually playing */}
+					color={fallbackColors?.[0]}
+					// PERF: Only animate when audio is actually playing
 					playing={isPlaying}
-					{/* PERF: 0.5x render scale - invisible quality difference on a blurred gradient */}
+					// PERF: 0.5x render scale - invisible quality difference on a blurred gradient
 					renderScale={0.5}
 					renderer={MeshGradientRenderer}
 				/>
@@ -340,7 +337,7 @@ export const AMLLWrapper = memo(({ variant }: { variant?: "standard" | "toxi" })
 					<div className={styles.padding} />
 					{lineGroups.map((group) => {
 						const isActive = activeLineIdsSet.has(group.main.id) || group.bg.some(b => activeLineIdsSet.has(b.id));
-						const isPast = group.main.endTime < /* currentTime */ 0; // static; controlled by group state
+	
 
 						if (isActive) {
 							return (
