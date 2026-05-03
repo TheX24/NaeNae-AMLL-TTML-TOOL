@@ -104,9 +104,9 @@ const StaticLineGroup = memo(({ group, isPast }: { group: LineGroup; isPast: boo
 		</div>
 		{/* BG lines */}
 		{group.bg.map((bgLine, i) => (
-			<div key={i} className={classNames(styles.line, styles.lineBG, bgLine.isDuet && styles.lineDuetR)}>
+			<div key={bgLine.id || i} className={classNames(styles.line, styles.lineBG, bgLine.isDuet && styles.lineDuetR)}>
 				<div className={styles.wordsContainer}>
-					{bgLine.words.map((w: any, wi: number) => <StaticWord key={wi} word={w} />)}
+					{bgLine.words.map((w: any, wi: number) => <StaticWord key={w.id || wi} word={w} />)}
 				</div>
 			</div>
 		))}
@@ -130,7 +130,7 @@ const ActiveLineGroup = memo(({ group, onWordClick }: { group: LineGroup; onWord
 			</div>
 			{/* BG lines - also highlight when group is active */}
 			{group.bg.map((bgLine, i) => (
-				<div key={i} className={classNames(styles.line, styles.lineBG, styles.lineBGActive, bgLine.isDuet && styles.lineDuetR)}>
+				<div key={bgLine.id || i} className={classNames(styles.line, styles.lineBG, styles.lineBGActive, bgLine.isDuet && styles.lineDuetR)}>
 					<div className={styles.wordsContainer}>
 						{bgLine.words.map((w: any, wi: number) => (
 							<ActiveWord key={w.id || wi} word={w} onWordClick={onWordClick} />
