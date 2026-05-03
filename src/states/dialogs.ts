@@ -28,6 +28,7 @@ export const historyRestoreDialogAtom = atom(false);
 export const importFromLRCLIBDialogAtom = atom(false);
 export const geniusSearchDialogAtom = atom(false);
 export const changelogDialogAtom = atom(false);
+export const whatsNewDialogAtom = atom(false);
 export const geniusImportLyricsDialogAtom = atom(false);
 export const fontSelectionDialogAtom = atom(false);
 export const lyricallyImportLyricsDialogAtom = atom(false);

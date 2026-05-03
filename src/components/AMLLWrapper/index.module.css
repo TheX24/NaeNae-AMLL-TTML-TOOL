@@ -1,4 +1,5 @@
 .amllWrapper {
+	box-sizing: border-box;
 	overflow: hidden;
 	flex-grow: 1;
 	height: 100%;
@@ -9,6 +10,10 @@
 	font-family: var(--default-font-family, "Inter", -apple-system, sans-serif);
 	display: flex;
 	flex-direction: column;
+}
+
+.amllWrapper * {
+	box-sizing: border-box;
 }
 
 .bgLayer {
@@ -28,14 +33,16 @@
 	flex-direction: column;
 	position: relative;
 	z-index: 2;
-	background: radial-gradient(circle at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%);
-	backdrop-filter: blur(20px);
+	/* PERF: Removed backdrop-filter: blur — causes full GPU re-composite every frame.
+	   Using a solid semi-transparent gradient overlay instead. */
+	background: radial-gradient(circle at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%);
 }
 
 .header {
 	padding: 40px 60px 20px;
 	z-index: 10;
-	transition: all 0.4s ease;
+	/* PERF: transition: all watches every CSS property. Scoped to opacity only. */
+	transition: opacity 0.4s ease;
 	background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
 }
 
@@ -57,7 +64,7 @@
 	flex-grow: 1;
 	overflow-y: auto;
 	scrollbar-width: none;
-	padding: 0 10%;
+	padding: 0 22%; /* Professional-grade central column layout */
 	scroll-behavior: smooth;
 	position: relative;
 }
@@ -82,6 +89,10 @@
 	will-change: transform, opacity;
 	backface-visibility: hidden;
 	overflow: visible; /* Ensure bloom isn't clipped */
+}
+
+.lineGroupDuet {
+	transform-origin: right center !important;
 }
 
 .lineGroupActive {
@@ -116,6 +127,12 @@
 .lineDuetR {
 	text-align: right !important;
 	align-items: flex-end !important;
+	transform-origin: right center; /* Fix: scale from right edge inward */
+}
+
+.lineDuetR .wordsContainer {
+	justify-content: flex-end;
+	padding-right: 3rem; /* Significant buffer to keep text away from the edge */
 }
 
 /* Background vocal lines - shown under the main line, smaller */
@@ -161,7 +178,8 @@
 	cursor: pointer;
 	line-height: 1.15;
 	transition: filter 0.6s ease, transform 0.8s cubic-bezier(0.34, 1.2, 0.64, 1), color 0.4s ease, opacity 0.4s ease !important;
-	will-change: color, filter, transform, opacity;
+	/* PERF: Removed will-change from ALL words — promoting every static word to a GPU
+	   layer wastes VRAM. will-change is applied only to .wordActive below. */
 	transform: scale(1);
 	transform-origin: center;
 }
@@ -173,16 +191,19 @@
 .word:hover {
 	color: #fff !important;
 	opacity: 1 !important;
-	filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+	/* PERF: Replaced drop-shadow filter with text-shadow — cheaper for GPU. */
+	text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 	transform: scale(1.02);
 }
 
 .wordActive {
 	color: #fff;
 	opacity: 1 !important;
-	filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.6));
+	/* PERF: Replaced drop-shadow with text-shadow + will-change only here (active words). */
+	text-shadow: 0 0 18px rgba(255, 255, 255, 0.5);
+	will-change: transform;
 	transform: scale(1.03);
-	transition: filter 0s, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+	transition: text-shadow 0s, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .wordPast {
@@ -245,11 +266,14 @@
 	background-clip: text;
 	color: transparent !important;
 	animation: toxi-float 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+	will-change: transform, filter, background-position;
 }
 
 .isToxi .wordActive {
-	/* Use filter instead of text-shadow to avoid background-clip issues */
-	filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+	/* PERF: text-shadow has no effect when color is transparent (background-clip: text).
+	   Using filter: drop-shadow on the element itself instead, which works with clip. 
+	   But to avoid the expensive per-frame recomposite, we use a subtle fixed glow. */
+	filter: brightness(1.15);
 	transition: none !important;
 }
 
@@ -262,7 +286,8 @@
 }
 
 .isToxi .lineGroup {
-	padding: 24px 20px; /* Increased padding to prevent clipping during float-up */
+	padding: 24px 20px;
+	box-sizing: border-box;
 	margin-bottom: 8px;
 }
 

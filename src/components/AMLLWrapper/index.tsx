@@ -36,19 +36,38 @@ import styles from "./index.module.css";
 const zeroAtom = atom(0);
 const displayTimeAtom = atom(0);
 
+/**
+ * A registry to hold references to active word DOM elements.
+ * This allows us to update the --progress CSS variable directly at high frequency
+ * without triggering React re-renders.
+ */
+const wordRegistry = new Map<string, { el: HTMLSpanElement; word: any }>();
+
 // A single word span - static version (no time subscription)
 const StaticWord = memo(({ word }: { word: any }) => (
 	<span className={styles.wordStatic}>{word.word}</span>
 ));
 
-// A single word span - active version (subscribes to time)
+// A single word span - active version (subscribes to time at a lower frequency)
 const ActiveWord = memo(({ word, onWordClick }: { word: any; onWordClick: (t: number) => void }) => {
 	const currentTime = useAtomValue(displayTimeAtom);
+	const spanRef = useRef<HTMLSpanElement>(null);
+	
 	const isWordActive = currentTime >= word.startTime && currentTime <= word.endTime;
 	const isWordPast = currentTime > word.endTime;
-	
 	const fadeWidth = useAtomValue(lyricWordFadeWidthAtom);
-	
+
+	// Register the element for high-frequency direct DOM updates
+	useEffect(() => {
+		if (isWordActive && spanRef.current) {
+			wordRegistry.set(word.id || `${word.startTime}`, { el: spanRef.current, word });
+			return () => {
+				wordRegistry.delete(word.id || `${word.startTime}`);
+			};
+		}
+	}, [isWordActive, word]);
+
+	// Initial progress for the first render or when state changes
 	const progress = isWordActive 
 		? Math.min(Math.max((currentTime - word.startTime) / (word.endTime - word.startTime), 0), 1)
 		: (isWordPast ? 1 : 0);
@@ -56,6 +75,7 @@ const ActiveWord = memo(({ word, onWordClick }: { word: any; onWordClick: (t: nu
 
 	return (
 		<span
+			ref={spanRef}
 			className={classNames(styles.word, isWordActive && styles.wordActive, isWordPast && styles.wordPast)}
 			data-active={isWordActive}
 			style={{ 
@@ -78,7 +98,7 @@ interface LineGroup {
 }
 
 const StaticLineGroup = memo(({ group, isPast }: { group: LineGroup; isPast: boolean }) => (
-	<div className={classNames(styles.lineGroup, isPast && styles.lineGroupPast)}>
+	<div className={classNames(styles.lineGroup, isPast && styles.lineGroupPast, group.main.isDuet && styles.lineGroupDuet)}>
 		{/* Main / duet line */}
 		<div className={classNames(styles.line, group.main.isDuet && styles.lineDuetR)}>
 			<div className={styles.wordsContainer}>
@@ -100,7 +120,7 @@ const ActiveLineGroup = memo(({ group, onWordClick }: { group: LineGroup; onWord
 	const showTranslation = useAtomValue(showTranslationLinesAtom);
 	const showRoman = useAtomValue(showRomanLinesAtom);
 	return (
-		<div className={classNames(styles.lineGroup, styles.lineGroupActive)}>
+		<div className={classNames(styles.lineGroup, styles.lineGroupActive, group.main.isDuet && styles.lineGroupDuet)}>
 			{/* Main / duet line */}
 			<div className={classNames(styles.line, styles.lineActive, group.main.isDuet && styles.lineDuetR)}>
 				<div className={styles.wordsContainer}>
@@ -162,10 +182,29 @@ export const AMLLWrapper = memo(({ variant }: { variant?: "standard" | "toxi" })
 
 				const displayMs = interpolatedTime * 1000;
 				
+				/**
+				 * Split-Rate Optimization:
+				 * 1. Visual updates (DOM) happen at the monitor's full refresh rate (rAF).
+				 * 2. Logic updates (React State) happen at a capped rate (max 60Hz) to save CPU.
+				 */
+				
+				// Update all registered active words directly via DOM
+				wordRegistry.forEach(({ el, word }) => {
+					const progress = Math.min(Math.max((displayMs - word.startTime) / (word.endTime - word.startTime), 0), 1);
+					// Using simple rounding instead of toFixed to reduce string garbage
+					el.style.setProperty("--progress", `${Math.round(progress * 1000) / 10}%`);
+				});
+
 				if (vsync) {
-					setDisplayTime(displayMs);
+					// Even with vsync, we cap the React update if the frequency is extremely high, 
+					// but we allow 60Hz for logic consistency.
+					if (now - lastUpdateRef.current >= 16.6) { 
+						setDisplayTime(displayMs);
+						lastUpdateRef.current = now;
+					}
 				} else {
-					if (now - lastUpdateRef.current >= 15.6) { // ~60 FPS
+					// Capped logic update (30Hz) when vsync is off to maximize efficiency
+					if (now - lastUpdateRef.current >= 33.3) { 
 						setDisplayTime(displayMs);
 						lastUpdateRef.current = now;
 					}
@@ -284,8 +323,10 @@ export const AMLLWrapper = memo(({ variant }: { variant?: "standard" | "toxi" })
 					key={albumImg || "default"}
 					album={albumImg || undefined}
 					colors={fallbackColors}
-					playing={true}
-					renderScale={1.0}
+					{/* PERF: Only animate when audio is actually playing */}
+					playing={isPlaying}
+					{/* PERF: 0.5x render scale - invisible quality difference on a blurred gradient */}
+					renderScale={0.5}
 					renderer={MeshGradientRenderer}
 				/>
 			</div>

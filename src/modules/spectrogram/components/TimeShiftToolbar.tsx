@@ -5,6 +5,7 @@ import {
 	DismissRegular,
 	CopyRegular,
 	ArrowRightRegular,
+	RecordRegular,
 	PlayFilled,
 } from "@fluentui/react-icons";
 import {
@@ -310,8 +311,8 @@ export const TimeShiftToolbar: FC = () => {
 							<TextField.Slot side="right">ms</TextField.Slot>
 						</TextField.Root>
 						<Tooltip content={t("timeShiftDialog.snapToPlayhead", "Snap start of affected lines to current playback time")}>
-							<IconButton size="1" variant="ghost" onClick={handleSnapToPlayhead}>
-								<ArrowRightRegular />
+							<IconButton size="1" variant="soft" radius="full" onClick={handleSnapToPlayhead}>
+								<RecordRegular fontSize={12} />
 							</IconButton>
 						</Tooltip>
 					</Flex>
