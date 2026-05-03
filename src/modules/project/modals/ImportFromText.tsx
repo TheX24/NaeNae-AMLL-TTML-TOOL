@@ -376,7 +376,11 @@ export const ImportFromText = () => {
 		for (const line of lines) {
 			const currentLine = line.trim();
 			if (!currentLine) {
-				processedLines.push("");
+				continue;
+			}
+
+			// Automatically remove genius tags e.g. [Chorus: artist]
+			if (currentLine.startsWith("[") && currentLine.endsWith("]")) {
 				continue;
 			}
 

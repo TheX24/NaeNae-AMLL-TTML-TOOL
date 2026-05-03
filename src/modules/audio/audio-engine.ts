@@ -188,6 +188,24 @@ class AudioEngine extends EventTarget {
 		return this._audioEl?.currentTime ?? 0;
 	}
 
+	private _lastReportedTime = 0;
+	private _lastPerformanceTime = performance.now();
+
+	get interpolatedCurrentTime() {
+		if (!this._audioEl) return 0;
+		if (!this.musicPlaying) return this._audioEl.currentTime;
+
+		const currentTime = this._audioEl.currentTime;
+		if (currentTime !== this._lastReportedTime) {
+			this._lastReportedTime = currentTime;
+			this._lastPerformanceTime = performance.now();
+			return currentTime;
+		}
+
+		const dt = (performance.now() - this._lastPerformanceTime) / 1000;
+		return currentTime + dt * this._musicPlayBackRate;
+	}
+
 	get musicDuration() {
 		return this._audioEl?.duration ?? 0;
 	}
@@ -233,6 +251,8 @@ class AudioEngine extends EventTarget {
 	seekMusic(offset: number) {
 		if (this._audioEl) {
 			this._audioEl.currentTime = offset;
+			this._lastReportedTime = offset;
+			this._lastPerformanceTime = performance.now();
 			this.dispatchEvent(new Event("music-seeked"));
 		}
 	}
@@ -241,6 +261,8 @@ class AudioEngine extends EventTarget {
 		if (!this._audioEl) return;
 		await this.resumeContext();
 		this._audioEl.currentTime = offset;
+		this._lastReportedTime = offset;
+		this._lastPerformanceTime = performance.now();
 		this._audioEl.play();
 		this.dispatchEvent(new Event("music-resume"));
 	}
