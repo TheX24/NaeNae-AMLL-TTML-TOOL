@@ -64,17 +64,20 @@ export async function getPhoneticSyllables(textOrArray: string | string[], lang:
 		.replace(/ē/g, "ee").replace(/ō/g, "ou")
 		.replace(/[^a-z]/g, "");
 	
-	// 2. Split it into all possible mora (syllables)
+	// 2. Split master into mora (syllables) — used as fallback for ambiguous chars
 	const masterSyllables = normalizedLinePhonetic
 		.replace(/([aeiouy])([aeiouy])/gi, "$1 $2")
 		.match(/([^aeiouy ]*[aeiouy]{1}([nm](?![aeiouy]))?|[^aeiouy ]+)/gi) || [normalizedLinePhonetic];
 
-	// 3. Calculate weights based on standalone readings to determine relative length
+	// 3. Fetch individual phonetics per capsule; store them directly for use as results.
+	//    Also compute syllable-count weights for the master-distribution fallback.
 	const charWeights: number[] = [];
+	const capPhonetics: string[] = [];
 	for (const cap of originalCapsules) {
 		const capText = cap.trim().replace(/\s+/g, "");
 		if (capText.length === 0) {
 			charWeights.push(0);
+			capPhonetics.push("");
 			continue;
 		}
 		const rawCapPhonetic = await getPhonetic(capText, detectedLang);
@@ -82,6 +85,7 @@ export async function getPhoneticSyllables(textOrArray: string | string[], lang:
 			.replace(/ā/g, "aa").replace(/ī/g, "ii").replace(/ū/g, "uu")
 			.replace(/ē/g, "ee").replace(/ō/g, "ou")
 			.replace(/[^a-z]/g, "");
+		capPhonetics.push(capPhonetic);
 			
 		const capSyllables = capPhonetic
 			.replace(/([aeiouy])([aeiouy])/gi, "$1 $2")
@@ -99,14 +103,35 @@ export async function getPhoneticSyllables(textOrArray: string | string[], lang:
 			continue;
 		}
 
-		// Distribute master syllables based on weight ratio
+		// Prefer the directly-fetched individual phonetic — it is already correct for
+		// simple kana (の → "no") and avoids syllable-distribution rounding errors.
+		// Only fall back to master-distribution slicing when the individual fetch was empty.
+		if (capPhonetics[i]) {
+			// Still advance syllableIndex so the master pointer stays in sync for any
+			// subsequent capsules that do need the fallback path.
+			let charSyllableCount = Math.round((charWeights[i] / totalWeight) * masterSyllables.length);
+			if (i === originalCapsules.length - 1 || totalWeight === 0) {
+				charSyllableCount = masterSyllables.length - syllableIndex;
+			}
+			charSyllableCount = Math.max(1, charSyllableCount);
+			if (i < originalCapsules.length - 1) {
+				const remainingWeight = charWeights.slice(i + 1).reduce((a, b) => a + b, 0);
+				if (remainingWeight > 0) {
+					charSyllableCount = Math.min(charSyllableCount, masterSyllables.length - syllableIndex - 1);
+				}
+			}
+			syllableIndex += charSyllableCount;
+			results.push(capPhonetics[i]);
+			continue;
+		}
+
+		// Fallback: distribute from the master line phonetic
 		let charSyllableCount = Math.round((charWeights[i] / totalWeight) * masterSyllables.length);
 		if (i === originalCapsules.length - 1 || totalWeight === 0) {
 			charSyllableCount = masterSyllables.length - syllableIndex;
 		}
 		
 		charSyllableCount = Math.max(1, charSyllableCount);
-		// Keep room for rest
 		if (i < originalCapsules.length - 1) {
 			const remainingWeight = charWeights.slice(i + 1).reduce((a, b) => a + b, 0);
 			if (remainingWeight > 0) {
