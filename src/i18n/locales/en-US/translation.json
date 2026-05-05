@@ -1,4 +1,9 @@
 {
+	"10": {
+		"0": {
+			"22000": "10.0.22000"
+		}
+	},
 	"app": {
 		"error": {
 			"title": "Oops, an error occurred!",
@@ -43,6 +48,12 @@
 		"noSongwriter": {
 			"title": "Confirm Export",
 			"description": "The song has no songwriters. Do you want to continue saving?"
+		},
+		"untimedLyrics": {
+			"title": "Untimed Lyrics Detected",
+			"description": "There is an untimed line or word in your lyrics. Would you like to fix it or export anyway?",
+			"exportAnyway": "Export Anyway",
+			"fixIt": "Fix It"
 		}
 	},
 	"dialog": {
@@ -112,7 +123,8 @@
 				"zh": "Chinese (Pinyin)",
 				"yue": "Cantonese (Jyutping)",
 				"ko": "Korean (Romaji)"
-			}
+			},
+			"duration": "持续时间"
 		},
 		"previewMode": {
 			"lyrics": "Lyrics",
@@ -121,6 +133,7 @@
 			"maskObsceneWords": "Mask Obscene Words",
 			"word": "Word",
 			"fadeWidth": "Fade Width",
+			"instantFade": "Instant Fade Out",
 			"mode": "Mode",
 			"standard": "Standard",
 			"amllDeprecated": "AMLL mode is deprecated, please use Standard mode",
@@ -160,7 +173,8 @@
 				"description": "Add words to ignore in quick fixes.",
 				"placeholder": "Enter word to ignore"
 			}
-		}
+		},
+		"loading": "面板载入中..."
 	},
 	"settings": {
 		"common": {
@@ -242,6 +256,9 @@
 		"appearance": {
 			"theme": "Theme",
 			"mode": {
+				"none": "None",
+				"image": "Image",
+				"gradient": "Gradient",
 				"basic": "Basic Editor",
 				"advanced": "Advanced Editor"
 			},
@@ -257,11 +274,6 @@
 			"glassBlur": "Glass Intensity",
 			"glassBlurDesc": "Adjust the background blur effect for glassmorphic elements.",
 			"background": "Background",
-			"mode": {
-				"none": "None",
-				"image": "Image",
-				"gradient": "Gradient"
-			},
 			"useCustomGradient": "Custom Gradient Color",
 			"useCustomGradientDesc": "Generate a gradient from a single color.",
 			"syncGradientToAccent": "Sync first color with Accent",
@@ -297,7 +309,37 @@
 			"customFontActive": "LOCAL CUSTOM FONT",
 			"defaultFonts": "Standard Stacks",
 			"systemFonts": "System Fonts",
-			"googleFonts": "Google Fonts Library"
+			"googleFonts": "Google Fonts Library",
+			"advanced": {
+				"projectColors": "Project Colors",
+				"primaryText": "Primary Text Color",
+				"primaryTextDesc": "Global primary text override.",
+				"secondaryText": "Secondary Text Color",
+				"workspace": "Workspace Theme",
+				"editor": "Editor Layout",
+				"audioVisuals": "Playback & Visuals",
+				"global": "Global Design System",
+				"masterResetNote": "This will reset all 20+ granular overrides.",
+				"resetMaster": "Master Reset Advanced Config"
+			},
+			"secondaryDesc": "Translations & Metadata.",
+			"layout": {
+				"title": "Application Layout",
+				"order": "Element Order",
+				"orderDesc": "Drag to reorder elements. Some positions may be limited by constraints.",
+				"titlebar": "Title Bar",
+				"ribbonbar": "Toolbar (Ribbon)",
+				"editor": "Main Editor Area",
+				"audio": "Audio Controls",
+				"ribbonPos": "Toolbar Orientation",
+				"pos": {
+					"top": "Top",
+					"bottom": "Bottom",
+					"left": "Left",
+					"right": "Right"
+				},
+				"sidebarWarning": "Note: Sidebar mode is experimental and may look different."
+			}
 		},
 		"group": {
 			"assistant": "Assistant",
@@ -431,7 +473,10 @@
 		"replaceWord": "Replace word…",
 		"combineWords": "Combine words",
 		"moveFollowingWordToNewLine": "Move followings to new line",
-		"moveWordToNewLine": "Move {count} word(s) to new line"
+		"moveWordToNewLine": "Move {count} word(s) to new line",
+		"moveLineToPlayhead": "Move line to playhead",
+		"noSyllablesFound": "No multiple syllables found.",
+		"splitIntoSyllables": "Split into Syllables (Romanized)"
 	},
 	"settingsDialog": {
 		"title": "Preferences",
@@ -537,7 +582,8 @@
 		"button": {
 			"stop": "Stop",
 			"start": "Start"
-		}
+		},
+		"description": "请选择自己喜欢的 BPM，并在每个蜂鸣声响起时按下 {key} 键，以测量音频/输入延迟差"
 	},
 	"metadataDialog": {
 		"fetchSongwriters": {
@@ -623,7 +669,9 @@
 		"remove": "Remove",
 		"about": "About",
 		"clickToSet": "Click to set ",
-		"autoDetect": "Auto Detect"
+		"autoDetect": "Auto Detect",
+		"move": "Move",
+		"copy": "Copy"
 	},
 	"textImportDialog": {
 		"addSpaces": "Add Spaces",
@@ -744,7 +792,12 @@
 		"line": "Line",
 		"clearIgnoredWords": "Clear All",
 		"noIgnoredWords": "No ignored words",
-		"noIssuesMessage": "No issues found! Your lyrics look good."
+		"noIssuesMessage": "No issues found! Your lyrics look good.",
+		"ambiguous": "Possible grammar issue",
+		"repeatedWord": "Repeated word",
+		"applyFix": "Apply suggested fix",
+		"ignoreSession": "Ignore this word in this session",
+		"ignoreAlways": "Always ignore this word"
 	},
 	"replaceWordDialog": {
 		"title": "Replace Word",
@@ -775,12 +828,17 @@
 		},
 		"fromLine": "From line",
 		"toLine": "to line",
-		"line": ""
+		"line": "",
+		"snapToPlayhead": "Snap start of affected lines to current playback time"
 	},
 	"lyrically": {
 		"noLyricsLabel": "No lyrics available for this track.",
 		"previewTitle": "Lyrically — Lyrics Preview",
-		"importTitle": "Import Lyrics safely via Lyrically (No CORS via API endpoint)"
+		"importTitle": "Import Lyrics safely via Lyrically (No CORS via API endpoint)",
+		"editingRawText": "Editing Raw Text",
+		"backToPreview": "Back to Preview",
+		"manualEdit": "Manual Edit",
+		"source": "Source: "
 	},
 	"globalDragOverlay": {
 		"title": "Release to load"
@@ -926,7 +984,12 @@
 		"appName": "Apple Music-like Lyrics TTML Tool",
 		"description": "A Word-by-Word TTML Editing and Timeline Tool for Apple Music-like Lyrics",
 		"buildDate": "Build Date: {date}",
-		"gitCommit": "Git Commit: {commit}"
+		"gitCommit": "Git Commit: {commit}",
+		"unknown": "Unknown",
+		"community": "Community & Contributions",
+		"communityDesc": "Help us make the tool better by contributing code, reporting issues, or providing translations.",
+		"github": "GitHub Repository",
+		"crowdin": "Help Translate in Crowdin"
 	},
 	"spectrogram": {
 		"invalidEndTime": "Cannot select this end time",
@@ -935,11 +998,103 @@
 		"showUnselectedLines": "Show unselected lines",
 		"settings": "Spectrogram Settings",
 		"resolution": "FFT Resolution",
-		"height": "Display Height"
+		"height": "Display Height",
+		"fftSize": "FFT Size",
+		"fftSizeOption": {
+			"512": "512 (Fast)",
+			"1024": "1024 (Normal)",
+			"2048": "2048 (Better Freq)",
+			"4096": "4096 (High Res)"
+		}
 	},
 	"pwa": {
 		"offlineReady": "Site successfully cached for offline use",
 		"updateRefresh": "Site updated, refresh to use the latest version!",
 		"refresh": "Refresh"
+	},
+	"": {
+		"/modules/lyric-editor/components": "./modules/lyric-editor/components",
+		"/components/PreviewModeSwitcher": "./components/PreviewModeSwitcher",
+		"/components/Dialogs": "./components/Dialogs",
+		"/edit-mode": "./edit-mode",
+		"/sync-mode": "./sync-mode",
+		"/preview-mode": "./preview-mode",
+		"": ".",
+		"/commands": "./commands"
+	},
+	"link": "link",
+	"$/components/AMLLWrapper": "$/components/AMLLWrapper",
+	"$/components/AMLLWrapper/AMLL": "$/components/AMLLWrapper/AMLL",
+	"$/components/TimingOverview": "$/components/TimingOverview",
+	"input": "input",
+	"$/types/ttml": "$/types/ttml",
+	"|": "|",
+	"windows": "windows",
+	"macos": "macos",
+	"@tauri-apps/api/window": "@tauri-apps/api/window",
+	"@tauri-apps/api/core": "@tauri-apps/api/core",
+	"$/modules/plugins/integrated/boykisserification": "$/modules/plugins/integrated/boykisserification",
+	"music-playback-rate-change": "music-playback-rate-change",
+	"volume-change": "volume-change",
+	"music-preserves-pitch-change": "music-preserves-pitch-change",
+	"music-seeked": "music-seeked",
+	"music-resume": "music-resume",
+	"music-pause": "music-pause",
+	"music-unload": "music-unload",
+	"music-loading": "music-loading",
+	"music-load-error": "music-load-error",
+	"music-load": "music-load",
+	"2d": "2d",
+	"TRANSCODING": "TRANSCODING",
+	"EXPORT_WAV": "EXPORT_WAV",
+	"\\n": "\\n",
+	"musicName": "musicName",
+	"artists": "artists",
+	"cover_art": "cover_art",
+	" ": " ",
+	"start": "start",
+	"end": "end",
+	"áéíóú": "áéíóú",
+	"äöü": "äöü",
+	"album": "album",
+	"SHA-256": "SHA-256",
+	"Failed to download plugin": {
+		" Please check your connection": {
+			"": "Failed to download plugin. Please check your connection."
+		}
+	},
+	"projects": "projects",
+	":": ":",
+	"span": "span",
+	"tt": "tt",
+	"head": "head",
+	"body": "body",
+	"ttm:agent": "ttm:agent",
+	"iTunesMetadata": "iTunesMetadata",
+	"songwriters": "songwriters",
+	"songwriter": "songwriter",
+	"amll:meta": "amll:meta",
+	"div": "div",
+	"p": "p",
+	"transliterations": "transliterations",
+	"transliteration": "transliteration",
+	"text": "text",
+	"\\u00AD": "\\u00AD",
+	"hyphen/en-us": "hyphen/en-us",
+	"hyphen/de": "hyphen/de",
+	"hyphen/fr": "hyphen/fr",
+	"hyphen/es": "hyphen/es",
+	"hyphen/id": "hyphen/id",
+	"hyphen/it": "hyphen/it",
+	"hyphen/pt": "hyphen/pt",
+	"hyphen/ru": "hyphen/ru",
+	",": ",",
+	"Custom": "Custom",
+	"\"MiSans\", Inter, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif": "\"MiSans\", Inter, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+	"suggestedSplits": {
+		"title": "Suggested Splits",
+		"description": "Choose a suggested split pattern for this {type}.",
+		"apply": "Apply Suggestion",
+		"noSuggestions": "No automated split suggestions available for this content."
 	}
 }

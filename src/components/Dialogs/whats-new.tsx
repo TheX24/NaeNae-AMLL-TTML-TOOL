@@ -7,9 +7,14 @@ import {
 	SettingsRegular, 
 	BoxRegular,
 	TranslateRegular,
-	RecordRegular
+	RecordRegular,
+	InfoRegular,
+	TimerRegular,
+	CheckmarkCircleRegular,
+	ShieldCheckmarkRegular,
+	LocalLanguageRegular
 } from "@fluentui/react-icons";
-import { Box, Button, Dialog, Flex, Heading, ScrollArea, Text, Card, Grid } from "@radix-ui/themes";
+import { Box, Button, Dialog, Flex, Heading, ScrollArea, Text, Card, Grid, Popover, IconButton } from "@radix-ui/themes";
 import { useAtom } from "jotai";
 import { whatsNewDialogAtom } from "$/states/dialogs.ts";
 import { useTranslation } from "react-i18next";
@@ -23,55 +28,91 @@ export function WhatsNewDialog() {
 			title: "Toxi Lyrics Engine",
 			description: "High-fidelity jump-down animations, instant-on bloom with smooth fade-out, and adjustable wipe softness.",
 			icon: <StarRegular />,
-			color: "pink"
+			color: "pink",
+			info: "Located in the Preview tab. Controls under Appearance > Preview allow adjusting wipe softness and bloom."
 		},
 		{
 			title: "144Hz+ Rendering",
-			description: "Dedicated interpolation engine for ultra-high refresh rates, bypassing React bottlenecks for butter-smooth lyrics.",
+			description: "Dedicated interpolation engine for ultra-high refresh rates, bypassing React bottlenecks.",
 			icon: <FlashRegular />,
-			color: "orange"
+			color: "orange",
+			info: "Automatically active. Ensures lyrics move smoothly regardless of your monitor's refresh rate."
+		},
+		{
+			title: "Millisecond Precision Sync",
+			description: "Interpolated high-resolution performance markers for frame-accurate timing.",
+			icon: <TimerRegular />,
+			color: "violet",
+			info: "Interpolates audio position between browser updates to achieve 1ms precision. Found in Sync mode."
 		},
 		{
 			title: "Cinematic Backgrounds",
 			description: "Hardware-accelerated Mesh Gradient backgrounds running at 60 FPS for a premium, alive-feeling UI.",
 			icon: <Sparkle24Regular />,
-			color: "indigo"
+			color: "indigo",
+			info: "Change in Appearance > Background. Supports both static images and dynamic gradients."
 		},
 		{
 			title: "Snap to Playhead",
 			description: "One-click synchronization that snaps lyric start times directly to the audio playhead position.",
 			icon: <RecordRegular />,
-			color: "teal"
+			color: "teal",
+			info: "In Sync mode, press 'Enter' or the 'Record' button to snap the current line to the music's current time."
+		},
+		{
+			title: "Auto-Lyric Sanitizer",
+			description: "Automatically strips Genius tags and cleans empty lines on import.",
+			icon: <CheckmarkCircleRegular />,
+			color: "grass",
+			info: "Filters out strings like [Chorus] or [Verse] and removes whitespace automatically when importing lyrics."
 		},
 		{
 			title: "Advanced Phonetics",
-			description: "Professional Mora-aware Japanese Romanization and capsule distribution system for perfect syllable syncing.",
+			description: "Professional Mora-aware Japanese Romanization and capsule distribution system.",
 			icon: <TranslateRegular />,
-			color: "cyan"
+			color: "cyan",
+			info: "Select Japanese lyrics and use the 'Phonetics' tool in the Ribbon Bar to generate Furigana or Romaji."
+		},
+		{
+			title: "Pre-Export Validator",
+			description: "Real-time scan for untimed or overlapping lyrics before saving.",
+			icon: <ShieldCheckmarkRegular />,
+			color: "red",
+			info: "Runs a diagnostic check when you click Export, highlighting lines that are missing timestamps or have timing conflicts."
 		},
 		{
 			title: "Integrated Audio Bridge",
 			description: "Built-in FFmpeg.wasm for high-fidelity MP3 to FLAC conversion to eliminate decoding drift.",
 			icon: <MusicNote1Regular />,
-			color: "blue"
+			color: "blue",
+			info: "Triggered when importing non-standard audio formats. Converts them to high-quality FLAC/MP3 for better compatibility."
 		},
 		{
 			title: "Appearance Editor",
 			description: "Over 40 granular visual parameters and theme presets to fully customize your editor's look.",
 			icon: <SettingsRegular />,
-			color: "ruby"
+			color: "ruby",
+			info: "Access via the Settings icon > Appearance. Customize everything from colors to border radius."
+		},
+		{
+			title: "Global Localization",
+			description: "Full i18n support with community-driven translations.",
+			icon: <LocalLanguageRegular />,
+			color: "blue",
+			info: "Switch languages in Settings > General. Currently supporting English, Chinese, and more via Crowdin."
 		},
 		{
 			title: "Community Plugin Store",
 			description: "Integrated store to browse and install community-made WASM importers and exporters.",
 			icon: <BoxRegular />,
-			color: "gold"
+			color: "gold",
+			info: "Open via the 'Plugins' tab in the Ribbon Bar to expand the tool's import/export capabilities."
 		}
 	];
 
 	return (
 		<Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-			<Dialog.Content style={{ maxWidth: 700, height: "80vh", maxHeight: 700 }}>
+			<Dialog.Content style={{ maxWidth: 850, height: "85vh", maxHeight: 800 }}>
 				<Flex justify="between" align="center" mb="4">
 					<Flex direction="column">
 						<Dialog.Title mb="1">
@@ -100,11 +141,28 @@ export function WhatsNewDialog() {
 							{features.map((f, i) => (
 								<Card key={i} variant="classic" style={{ padding: "var(--space-3)" }}>
 									<Flex direction="column" gap="2">
-										<Flex align="center" gap="2">
-											<Box style={{ color: `var(--${f.color}-11)` }}>
-												{f.icon}
-											</Box>
-											<Heading size="3">{f.title}</Heading>
+										<Flex align="center" justify="between">
+											<Flex align="center" gap="2">
+												<Box style={{ color: `var(--${f.color}-11)` }}>
+													{f.icon}
+												</Box>
+												<Heading size="3">{f.title}</Heading>
+											</Flex>
+											<Popover.Root>
+												<Popover.Trigger>
+													<IconButton size="1" variant="ghost" color="gray" style={{ cursor: "pointer" }}>
+														<InfoRegular />
+													</IconButton>
+												</Popover.Trigger>
+												<Popover.Content style={{ width: 300 }} size="2">
+													<Flex direction="column" gap="2">
+														<Text size="2" weight="bold" color={f.color as any}>{f.title}</Text>
+														<Text size="2" color="gray">
+															{f.info}
+														</Text>
+													</Flex>
+												</Popover.Content>
+											</Popover.Root>
 										</Flex>
 										<Text size="2" color="gray">
 											{f.description}
@@ -114,13 +172,14 @@ export function WhatsNewDialog() {
 							))}
 						</Grid>
 
-						<Box mt="2">
+						<Box mt="2" mb="4">
 							<Heading size="3" mb="2">Other Enhancements</Heading>
 							<Flex direction="column" gap="2">
 								<Text size="2">• <strong>V-Sync & FPS Tools</strong>: Real-time performance monitoring.</Text>
 								<Text size="2">• <strong>Smart BG Vocal Grouping</strong>: Unified scaling for main and background lines.</Text>
 								<Text size="2">• <strong>Refined .ttml Writer</strong>: Optimized metadata handling and cleaner XML output.</Text>
 								<Text size="2">• <strong>Modernized UI</strong>: Unified glassmorphism and improved layout stability.</Text>
+								<Text size="2">• <strong>Millisecond Timestamps</strong>: Support for high-precision 3-digit millisecond output.</Text>
 							</Flex>
 						</Box>
 					</Flex>

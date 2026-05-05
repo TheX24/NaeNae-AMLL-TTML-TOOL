@@ -36,7 +36,7 @@ import {
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Reorder, AnimatePresence, motion } from "framer-motion";
+import { Reorder } from "framer-motion";
 import { backgroundGradients } from "$/modules/settings/states/gradients";
 import {
 	accentColorAtom,

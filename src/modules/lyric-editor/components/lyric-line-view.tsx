@@ -23,6 +23,7 @@ import {
 	Text,
 	TextField,
 } from "@radix-ui/themes";
+import { suggestedSplitsDialogAtom } from "$/states/dialogs.ts";
 import classNames from "classnames";
 import { useAtom, type Atom, atom, useAtomValue, useStore } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
@@ -356,6 +357,7 @@ export const LyricLineView: FC<{
 	const store = useStore();
 	const wordsContainerRef = useRef<HTMLDivElement>(null);
 	const blockDragRef = useRef(false);
+	const lastClickTimeRef = useRef(0);
 
 	const isLastLineAtom = useMemo(
 		() => atom((get) => get(lyricLinesAtom).lyricLines.length - 1 === lineIndex),
@@ -673,6 +675,22 @@ export const LyricLineView: FC<{
 						onClick={(evt) => {
 							evt.stopPropagation();
 							evt.preventDefault();
+
+							const now = Date.now();
+							const clickInterval = now - lastClickTimeRef.current;
+							lastClickTimeRef.current = now;
+
+							if (clickInterval < 300) {
+								if (evt.ctrlKey || evt.metaKey) {
+									// Open Suggested Splits Dialog for the whole line
+									store.set(suggestedSplitsDialogAtom, {
+										open: true,
+										lineId: line.id,
+									});
+									return;
+								}
+							}
+
 							if (evt.ctrlKey) {
 								setSelectedLines((v) => {
 									if (v.has(line.id)) {

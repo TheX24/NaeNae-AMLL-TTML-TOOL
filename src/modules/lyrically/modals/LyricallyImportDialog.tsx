@@ -257,10 +257,10 @@ export const LyricallyImportDialog = () => {
 						<>
 							<Flex justify="between" align="center" mb="2">
 								<Text size="1" color="gray">
-									{isEditing ? "Editing Raw Text" : t("genius.previewSubtitle", "Text in parentheses will be separated as background lyrics.")}
+									{isEditing ? t("lyrically.editingRawText", "Editing Raw Text") : t("genius.previewSubtitle", "Text in parentheses will be separated as background lyrics.")}
 								</Text>
 								<Button variant="ghost" size="1" onClick={() => setIsEditing(!isEditing)}>
-									{isEditing ? "Back to Preview" : "Manual Edit"}
+									{isEditing ? t("lyrically.backToPreview", "Back to Preview") : t("lyrically.manualEdit", "Manual Edit")}
 								</Button>
 							</Flex>
 
@@ -394,7 +394,7 @@ export const LyricallyImportDialog = () => {
 									<Flex direction="column" gap="1" style={{ flex: 1, minWidth: 0 }}>
 										<Text size="2" weight="bold" truncate>{hit.name}</Text>
 										<Text size="1" color="gray" truncate>{hit.artist}{hit.album ? ` • ${hit.album}` : ""}</Text>
-										{hit.source && <Text size="1" color="gray" style={{ opacity: 0.6 }}>Source: {hit.source}</Text>}
+										{hit.source && <Text size="1" color="gray" style={{ opacity: 0.6 }}>{t("lyrically.source", "Source: ")}{hit.source}</Text>}
 									</Flex>
 								</Flex>
 							</Card>

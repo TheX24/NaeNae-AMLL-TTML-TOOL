@@ -562,7 +562,7 @@ export const GrammarCheckDialog = () => {
 																	size="1"
 																	variant="soft"
 																	onClick={() => handleFix(issue)}
-																	title="Apply suggested fix"
+																	title={t("grammarCheck.applyFix", "Apply suggested fix")}
 																>
 																	<CheckRegular
 																		style={{ color: "var(--green-9)" }}
@@ -574,7 +574,7 @@ export const GrammarCheckDialog = () => {
 																variant="soft"
 																color="red"
 																onClick={() => handleIgnore(issue)}
-																title="Ignore this word in this session"
+																title={t("grammarCheck.ignoreSession", "Ignore this word in this session")}
 															>
 																<DismissRegular />
 															</IconButton>
@@ -582,7 +582,7 @@ export const GrammarCheckDialog = () => {
 																size="1"
 																variant="soft"
 																onClick={() => handleIgnoreWord(issue.word)}
-																title="Always ignore this word"
+																title={t("grammarCheck.ignoreAlways", "Always ignore this word")}
 															>
 																<SubtractRegular />
 															</IconButton>

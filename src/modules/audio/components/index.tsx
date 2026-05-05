@@ -198,7 +198,7 @@ export const AudioControls: FC = memo(() => {
 	}, [preservesPitch]);
 
 	return (
-		<Card m="2" mt="0" style={{ backgroundColor: "var(--audio-bar-bg, var(--rt-color-panel-solid))" }}>
+		<Card m="2" mt="0" style={{ backgroundColor: "var(--audio-bar-bg, var(--rt-color-panel-solid))", height: "100%", minHeight: 0 }}>
 			<Inset>
 				<AudioPlaybackKeyBinding />
 				<AuditionKeyBinding />

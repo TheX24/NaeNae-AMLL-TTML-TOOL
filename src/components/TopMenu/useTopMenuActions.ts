@@ -188,17 +188,17 @@ export const useTopMenuActions = () => {
 		};
 
 		const lyrics = store.get(lyricLinesAtom);
-		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.length > 0);
+		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.some((w) => w.word.trim().length > 0));
 		let untimedWord: LyricWord | undefined;
 		let untimedLine: import("$/types/ttml").LyricLine | undefined;
 
 		if (firstUntimedLine) {
 			untimedLine = firstUntimedLine;
-			untimedWord = firstUntimedLine.words[0];
+			untimedWord = firstUntimedLine.words.find((w) => w.word.trim().length > 0);
 		} else {
-			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0));
+			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0 && w.word.trim().length > 0));
 			if (untimedLine) {
-				untimedWord = untimedLine.words.find((w) => w.endTime === 0);
+				untimedWord = untimedLine.words.find((w) => w.endTime === 0 && w.word.trim().length > 0);
 			}
 		}
 
@@ -238,17 +238,17 @@ export const useTopMenuActions = () => {
 		};
 
 		const lyrics = store.get(lyricLinesAtom);
-		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.length > 0);
+		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.some((w) => w.word.trim().length > 0));
 		let untimedWord: LyricWord | undefined;
 		let untimedLine: import("$/types/ttml").LyricLine | undefined;
 
 		if (firstUntimedLine) {
 			untimedLine = firstUntimedLine;
-			untimedWord = firstUntimedLine.words[0];
+			untimedWord = firstUntimedLine.words.find((w) => w.word.trim().length > 0);
 		} else {
-			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0));
+			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0 && w.word.trim().length > 0));
 			if (untimedLine) {
-				untimedWord = untimedLine.words.find((w) => w.endTime === 0);
+				untimedWord = untimedLine.words.find((w) => w.endTime === 0 && w.word.trim().length > 0);
 			}
 		}
 

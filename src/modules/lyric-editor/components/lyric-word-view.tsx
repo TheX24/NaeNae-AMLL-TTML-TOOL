@@ -64,7 +64,8 @@ import {
 	visualizeTimestampUpdateAtom,
 	syncLevelModeAtom,
 } from "$/modules/settings/states/sync.ts";
-import { splitWordDialogAtom } from "$/states/dialogs.ts";
+import { instantHighlightFadeAtom } from "$/modules/settings/states/preview";
+import { splitWordDialogAtom, suggestedSplitsDialogAtom } from "$/states/dialogs.ts";
 import {
 	allLyricsWordsAtom,
 	editingWordStateAtom,
@@ -998,6 +999,7 @@ const LyricSyncWordView: FC<{
 		};
 	}, [endTime, visualizeTimestampUpdate]);
 
+	const instantFade = useAtomValue(instantHighlightFadeAtom);
 	const hasError = useMemo(() => startTime > endTime, [startTime, endTime]);
 
 	// active/animated classes are applied imperatively by the store.sub effect above
@@ -1006,6 +1008,7 @@ const LyricSyncWordView: FC<{
 			classNames(
 				styles.lyricWord,
 				styles.sync,
+				instantFade && styles.hasInstantFade,
 				isWordSelected && styles.selected,
 				isWordBlank && styles.blank,
 				hasError &&
@@ -1017,6 +1020,7 @@ const LyricSyncWordView: FC<{
 				/* highlightGrammarWarnings is visually disabled as per user request */
 			),
 		[
+			instantFade,
 			isWordBlank,
 			isWordSelected,
 			hasError,
@@ -1061,6 +1065,16 @@ const LyricSyncWordView: FC<{
 
 				// Only trigger grammar actions if two clicks happen within 300ms (standard double click)
 				if (clickInterval > 300) return;
+
+				if (evt.ctrlKey || evt.metaKey) {
+					// Open Suggested Splits Dialog
+					store.set(suggestedSplitsDialogAtom, {
+						open: true,
+						lineId: line.id,
+						wordIndex: wordIndex,
+					});
+					return;
+				}
 
 				// Only open the dialog if Quick Fixes is enabled
 				if (!quickFixes) return;
