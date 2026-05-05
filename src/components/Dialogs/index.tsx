@@ -20,6 +20,7 @@ import { ConfirmationDialog } from "./confirmation.tsx";
 import { Mp3ConversionDialog } from "./mp3-conversion.tsx";
 import { FontSelectionDialog } from "$/modules/settings/modals/FontSelectionDialog.tsx";
 import { UrbanDictionaryDialog } from "$/modules/lyric-editor/modals/UrbanDictionaryDialog.tsx";
+import { SuggestedSplitsDialog } from "$/modules/segmentation/components/SuggestedSplits.tsx";
 
 export const Dialogs = () => {
 	return (
@@ -46,6 +47,7 @@ export const Dialogs = () => {
 			<WhatsNewDialog />
 			<FontSelectionDialog />
 			<UrbanDictionaryDialog />
+			<SuggestedSplitsDialog />
 		</>
 	);
 };

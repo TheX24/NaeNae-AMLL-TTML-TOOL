@@ -88,7 +88,6 @@ import {
 import styles from "./App.module.css";
 import DarkThemeDetector from "./components/DarkThemeDetector";
 import RibbonBar from "./components/RibbonBar";
-import { ResizablePanel } from "./components/ResizablePanel";
 import { TitleBar } from "./components/TitleBar";
 import { useFileOpener } from "./hooks/useFileOpener.ts";
 import AudioControls from "./modules/audio/components/index.tsx";
@@ -598,6 +597,7 @@ function App() {
 		};
 	}, [store]);
 
+
 	useEffect(() => {
 		const handleDragEnter = (e: DragEvent) => {
 			if (e.dataTransfer?.types.includes("Files")) {
@@ -791,9 +791,13 @@ function App() {
 								if (vRibbonPosition === "left" || vRibbonPosition === "right") {
 									return (
 										<Flex direction="row" flexGrow="1" overflow="hidden" key="editor-row">
-											{vRibbonPosition === "left" && <RibbonBar isSidebar position="left" />}
+											{vRibbonPosition === "left" && (
+                                                <RibbonBar isSidebar position="left" />
+                                            )}
 											{editorContent}
-											{vRibbonPosition === "right" && <RibbonBar isSidebar position="right" />}
+											{vRibbonPosition === "right" && (
+                                                <RibbonBar isSidebar position="right" />
+                                            )}
 										</Flex>
 									);
 								}
@@ -801,9 +805,9 @@ function App() {
 							}
 							if (id === "audio-controls") {
 								return (
-									<Box flexShrink="0" key="audio-controls">
-										<AudioControls />
-									</Box>
+                                    <Box flexShrink="0" key="audio-controls">
+                                        <AudioControls />
+                                    </Box>
 								);
 							}
 							return null;

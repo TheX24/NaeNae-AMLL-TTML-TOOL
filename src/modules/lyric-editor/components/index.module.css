@@ -30,6 +30,21 @@
 		transition:
 			box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
 			background-color 0.2s ease;
+
+		&.hasInstantFade {
+			transition: none !important;
+			animation: none !important;
+
+			&.active, &.animated {
+				transition: none !important;
+				animation: none !important;
+				box-shadow: none !important; /* Disable glow for instant feedback */
+				
+				.displayWord {
+					text-shadow: none !important;
+				}
+			}
+		}
 	}
 
 

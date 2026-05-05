@@ -46,7 +46,7 @@ export const RibbonBar = memo(
 				<Inset>
 					<div
 						style={{
-							height: isSidebar ? "100%" : "130px",
+							height: "100%",
 							overflowY: isSidebar ? "auto" : "clip",
 							overflowX: "clip",
 						}}

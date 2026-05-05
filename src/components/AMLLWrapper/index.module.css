@@ -300,3 +300,17 @@
 	35% { transform: translateY(8px); }
 	100% { transform: translateY(0); }
 }
+
+/* ── Instant Fade Out Logic ──────────────────────────────── */
+.hasInstantFade .word,
+.hasInstantFade .wordActive,
+.hasInstantFade .wordPast,
+.hasInstantFade .lineGroup {
+	transition: none !important;
+	animation: none !important; /* Disable Toxi float animation if instant is preferred */
+}
+
+.hasInstantFade .wordPast {
+	transition: none !important;
+	filter: none !important;
+}

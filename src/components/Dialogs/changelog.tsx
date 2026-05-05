@@ -38,6 +38,21 @@ export function ChangelogDialog() {
 				<ScrollArea type="always" scrollbars="vertical" style={{ height: "calc(100% - 60px)" }}>
 					<Flex direction="column" gap="5" pr="4">
 						<Box>
+							<Heading size="4" mb="2" color="teal">v0.6.5 Updates (Instant Transitions & UI Cleanup)</Heading>
+							<Flex direction="column" gap="3">
+								<Text size="2">
+									<strong>Instant Highlight Fade:</strong> Added a new toggle in both Preview and Sync modes to switch between smooth fading and instant transitions for word highlights. Perfect for high-precision timing review.
+								</Text>
+								<Text size="2">
+									<strong>Scrapped Element Resizing:</strong> Officially scrapped the experimental "Element Resizing" mode and associated keybindings (Ctrl+Alt). This eliminates potential layout conflicts and simplifies the core interface.
+								</Text>
+								<Text size="2">
+									<strong>Enhanced "What's New":</strong> Expanded the feature guide to include 12 core tool features with dedicated "Info" buttons for direct usage guidance and localized documentation.
+								</Text>
+							</Flex>
+						</Box>
+
+						<Box>
 							<Heading size="4" mb="2" color="gold">v0.6.2 Updates (Sync Accuracy & Export Validation)</Heading>
 							<Flex direction="column" gap="3">
 								<Text size="2">

@@ -17,6 +17,7 @@ import {
 	vsyncAtom,
 	showFpsCounterAtom,
 	lyricWordFadeWidthAtom,
+	instantHighlightFadeAtom,
 } from "$/modules/settings/states/preview";
 import {
 	isDarkThemeAtom,
@@ -296,6 +297,7 @@ export const AMLLWrapper = memo(({ variant }: { variant?: "standard" | "toxi" })
 	};
 
 	const isPlaying = useAtomValue(audioPlayingAtom);
+	const instantFade = useAtomValue(instantHighlightFadeAtom);
 	const albumImg = useAtomValue(customBackgroundImageAtom);
 
 	const useCustomAccent = useAtomValue(useCustomAccentAtom);
@@ -313,7 +315,12 @@ export const AMLLWrapper = memo(({ variant }: { variant?: "standard" | "toxi" })
 	}, [useCustomAccent, customAccentColor]);
 
 	return (
-		<div className={classNames(styles.amllWrapper, darkMode && styles.isDark, isToxi && styles.isToxi)}>
+		<div className={classNames(
+			styles.amllWrapper, 
+			darkMode && styles.isDark, 
+			isToxi && styles.isToxi,
+			instantFade && styles.hasInstantFade
+		)}>
 			{/* Dynamic Mesh Warp Background (Kawarp) */}
 			<div className={styles.bgLayer}>
 				<BackgroundRender 

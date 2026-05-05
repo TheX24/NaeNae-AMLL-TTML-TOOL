@@ -181,6 +181,9 @@ export const useSpectrogramWorker = (
 
 					setLastTileTimestamp(Date.now());
 				} catch (err) {
+					if (err instanceof Error && err.message === "Audio buffer changed") {
+						return;
+					}
 					console.error("生成频谱图瓦片失败", err);
 				} finally {
 					activeRequests.current.delete(requestFingerprint);

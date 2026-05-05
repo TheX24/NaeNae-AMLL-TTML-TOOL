@@ -47,6 +47,7 @@ import {
 	visualizeTimestampUpdateAtom,
 	type SyncLevelMode,
 } from "$/modules/settings/states/sync.ts";
+import { instantHighlightFadeAtom } from "$/modules/settings/states/preview";
 import {
 	keySyncEndAtom,
 	keySyncNextAtom,
@@ -131,6 +132,7 @@ export const SyncModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTMLDiv
 		const [syncTimeOffset, setSyncTimeOffset] = useAtom(syncTimeOffsetAtom);
 		const [syncCommitOffset, setSyncCommitOffset] = useAtom(syncCommitOffsetAtom);
 		const [syncLevelMode, setSyncLevelMode] = useAtom(syncLevelModeAtom);
+		const [instantFade, setInstantFade] = useAtom(instantHighlightFadeAtom);
 		const { t } = useTranslation();
 
 		return (
@@ -365,6 +367,17 @@ export const SyncModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTMLDiv
 							<Checkbox
 								checked={enableSyncGlowAnimation}
 								onCheckedChange={(v) => setEnableSyncGlowAnimation(!!v)}
+							/>
+							<Text
+								wrap="nowrap"
+								size="1"
+								style={{ color: "var(--accent-11)" }}
+							>
+								{t("ribbonBar.previewMode.instantFade", "即时淡出")}
+							</Text>
+							<Checkbox
+								checked={instantFade}
+								onCheckedChange={(v) => setInstantFade(!!v)}
 							/>
 
 							<Text

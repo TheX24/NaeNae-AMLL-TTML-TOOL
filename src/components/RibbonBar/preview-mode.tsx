@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import {
 	PreviewModeType,
 	hideObsceneWordsAtom,
+	instantHighlightFadeAtom,
 	lyricWordFadeWidthAtom,
 	previewModeTypeAtom,
 	showFpsCounterAtom,
@@ -38,6 +39,7 @@ export const PreviewModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTML
 		const [lyricWordFadeWidth, setLyricWordFadeWidth] = useAtom(
 			lyricWordFadeWidthAtom,
 		);
+		const [instantFade, setInstantFade] = useAtom(instantHighlightFadeAtom);
 		const [vsync, setVsync] = useAtom(vsyncAtom);
 		const [showFps, setShowFps] = useAtom(showFpsCounterAtom);
 		const { t } = useTranslation();
@@ -113,6 +115,13 @@ export const PreviewModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTML
 									setLyricWordFadeWidth(value);
 								}
 							}}
+						/>
+						<Text wrap="nowrap" size="1" style={{ color: "var(--accent-11)" }}>
+							{t("ribbonBar.previewMode.instantFade", "即时淡出")}
+						</Text>
+						<Checkbox
+							checked={instantFade}
+							onCheckedChange={(v) => setInstantFade(!!v)}
 						/>
 					</Grid>
 				</RibbonSection>

@@ -50,3 +50,8 @@ export const mp3ConversionDialogAtom = atom<{
 	onConvert: () => {},
 	onSkip: () => {},
 });
+export const suggestedSplitsDialogAtom = atom<{
+	open: boolean;
+	lineId?: string;
+	wordIndex?: number;
+}>({ open: false });
