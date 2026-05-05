@@ -89,6 +89,7 @@ import styles from "./App.module.css";
 import DarkThemeDetector from "./components/DarkThemeDetector";
 import RibbonBar from "./components/RibbonBar";
 import { TitleBar } from "./components/TitleBar";
+import { ResizablePanel } from "./components/ResizablePanel";
 import { useFileOpener } from "./hooks/useFileOpener.ts";
 import AudioControls from "./modules/audio/components/index.tsx";
 import { useAudioFeedback } from "./modules/audio/hooks/useAudioFeedback.ts";

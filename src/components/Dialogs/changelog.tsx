@@ -38,6 +38,18 @@ export function ChangelogDialog() {
 				<ScrollArea type="always" scrollbars="vertical" style={{ height: "calc(100% - 60px)" }}>
 					<Flex direction="column" gap="5" pr="4">
 						<Box>
+							<Heading size="4" mb="2" color="ruby">v0.6.6 Updates (Preview Stability & Toxi Fixes)</Heading>
+							<Flex direction="column" gap="3">
+								<Text size="2">
+									<strong>Preview Panel Stability:</strong> Fixed a critical "white page" crash when toggling the Preview Panel in Sync mode by resolving a missing component import in the main application layout.
+								</Text>
+								<Text size="2">
+									<strong>Toxi Animation Correction:</strong> Fixed a bug where the "jump-down" word animation was incorrectly disabled when "Instant Fade Out" was active. High-fidelity Toxi animations now work consistently with all highlight settings.
+								</Text>
+							</Flex>
+						</Box>
+
+						<Box>
 							<Heading size="4" mb="2" color="teal">v0.6.5 Updates (Instant Transitions & UI Cleanup)</Heading>
 							<Flex direction="column" gap="3">
 								<Text size="2">
