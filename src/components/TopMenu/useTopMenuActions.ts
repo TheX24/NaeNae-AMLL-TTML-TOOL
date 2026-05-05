@@ -12,6 +12,7 @@ import {
 	segmentWord,
 } from "$/modules/segmentation/utils/segmentation";
 import { audioEngine } from "$/modules/audio/audio-engine";
+import { getSynchronizableUnits } from "$/modules/lyric-editor/utils/lyric-states.ts";
 import { currentTimeAtom } from "$/modules/audio/states/index.ts";
 import { useSegmentationConfig } from "$/modules/segmentation/utils/useSegmentationConfig";
 import {
@@ -188,17 +189,17 @@ export const useTopMenuActions = () => {
 		};
 
 		const lyrics = store.get(lyricLinesAtom);
-		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.some((w) => w.word.trim().length > 0));
+		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && getSynchronizableUnits(line).length > 0);
 		let untimedWord: LyricWord | undefined;
 		let untimedLine: import("$/types/ttml").LyricLine | undefined;
 
 		if (firstUntimedLine) {
 			untimedLine = firstUntimedLine;
-			untimedWord = firstUntimedLine.words.find((w) => w.word.trim().length > 0);
+			untimedWord = getSynchronizableUnits(firstUntimedLine)[0].word;
 		} else {
-			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0 && w.word.trim().length > 0));
+			untimedLine = lyrics.lyricLines.find((line) => getSynchronizableUnits(line).some((u) => u.word.endTime === 0));
 			if (untimedLine) {
-				untimedWord = untimedLine.words.find((w) => w.endTime === 0 && w.word.trim().length > 0);
+				untimedWord = getSynchronizableUnits(untimedLine).find((u) => u.word.endTime === 0)?.word;
 			}
 		}
 
@@ -238,17 +239,17 @@ export const useTopMenuActions = () => {
 		};
 
 		const lyrics = store.get(lyricLinesAtom);
-		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && line.words.some((w) => w.word.trim().length > 0));
+		const firstUntimedLine = lyrics.lyricLines.find((line) => line.endTime === 0 && getSynchronizableUnits(line).length > 0);
 		let untimedWord: LyricWord | undefined;
 		let untimedLine: import("$/types/ttml").LyricLine | undefined;
 
 		if (firstUntimedLine) {
 			untimedLine = firstUntimedLine;
-			untimedWord = firstUntimedLine.words.find((w) => w.word.trim().length > 0);
+			untimedWord = getSynchronizableUnits(firstUntimedLine)[0].word;
 		} else {
-			untimedLine = lyrics.lyricLines.find((line) => line.words.some((w) => w.endTime === 0 && w.word.trim().length > 0));
+			untimedLine = lyrics.lyricLines.find((line) => getSynchronizableUnits(line).some((u) => u.word.endTime === 0));
 			if (untimedLine) {
-				untimedWord = untimedLine.words.find((w) => w.endTime === 0 && w.word.trim().length > 0);
+				untimedWord = getSynchronizableUnits(untimedLine).find((u) => u.word.endTime === 0)?.word;
 			}
 		}
 
