@@ -307,7 +307,6 @@
 .hasInstantFade .wordPast,
 .hasInstantFade .lineGroup {
 	transition: none !important;
-	animation: none !important; /* Disable Toxi float animation if instant is preferred */
 }
 
 .hasInstantFade .wordPast {
