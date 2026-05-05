@@ -44,7 +44,7 @@ export function ChangelogDialog() {
 									<strong>Instant Highlight Fade:</strong> Added a new toggle in both Preview and Sync modes to switch between smooth fading and instant transitions for word highlights. Perfect for high-precision timing review.
 								</Text>
 								<Text size="2">
-									<strong>UI Streamlining:</strong> Removed the legacy "Element Resizing" feature and associated keybindings (Ctrl+Alt) to reduce interface clutter and improve global layout stability.
+									<strong>Scrapped Element Resizing:</strong> Officially scrapped the experimental "Element Resizing" mode and associated keybindings (Ctrl+Alt). This eliminates potential layout conflicts and simplifies the core interface.
 								</Text>
 								<Text size="2">
 									<strong>Enhanced "What's New":</strong> Expanded the feature guide to include 12 core tool features with dedicated "Info" buttons for direct usage guidance and localized documentation.
