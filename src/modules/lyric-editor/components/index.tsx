@@ -11,7 +11,7 @@
 
 import { MyLocation24Regular } from "@fluentui/react-icons";
 import { Box, Button, Flex, Text } from "@radix-ui/themes";
-import { atom, useAtomValue } from "jotai";
+import { atom, useAtom, useAtomValue, useStore } from "jotai";
 import { splitAtom } from "jotai/utils";
 import { focusAtom } from "jotai-optics";
 import {
@@ -31,9 +31,12 @@ import {
 	selectedLinesAtom,
 	ToolMode,
 	toolModeAtom,
-	allLyricsWordsAtom,
 } from "$/states/main.ts";
-import { useStore } from "jotai";
+import {
+	geniusCategorizationEnabledAtom,
+	geniusHeaderDetectionDialogShownAtom,
+	geniusHeaderDetectionDialogOpenAtom,
+} from "$/modules/settings/states/index.ts";
 import type { LyricLine } from "$/types/ttml.ts";
 import styles from "./index.module.css";
 import { LyricLineView } from "./lyric-line-view";
@@ -97,6 +100,23 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 			offset: viewContainerEl.clientHeight / -2 + 50,
 		});
 	}, []);
+
+	const geniusCategorizationEnabled = useAtomValue(geniusCategorizationEnabledAtom);
+	const dialogShown = useAtomValue(geniusHeaderDetectionDialogShownAtom);
+	const [, setDetectionDialogOpen] = useAtom(geniusHeaderDetectionDialogOpenAtom);
+	const lyricLines = useAtomValue(lyricLinesAtom).lyricLines;
+
+	useEffect(() => {
+		if (dialogShown || geniusCategorizationEnabled) return;
+		const hasHeader = lyricLines.some((line) =>
+			/^\[(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break).*?\]$/i.test(
+				line.words.map((w) => w.word).join(""),
+			),
+		);
+		if (hasHeader) {
+			setDetectionDialogOpen(true);
+		}
+	}, [lyricLines, dialogShown, geniusCategorizationEnabled, setDetectionDialogOpen]);
 
 	useEffect(() => {
 		if (scrollToIndex === undefined) return;

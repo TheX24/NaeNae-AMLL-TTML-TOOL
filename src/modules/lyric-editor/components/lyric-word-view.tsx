@@ -1282,8 +1282,8 @@ type LyricWordViewProps = {
 	lineIndex: number;
 };
 
-export const LyricWordView: FC<LyricWordViewProps> = memo(
-	({ wordAtom, wordIndex, line, lineIndex }) => {
+export const LyricWordView: FC<LyricWordViewProps & { isHeaderLine?: boolean }> = memo(
+	({ wordAtom, wordIndex, line, lineIndex, isHeaderLine }) => {
 	const { t } = useTranslation();
 	const word = useAtomValue(wordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
@@ -1327,6 +1327,14 @@ export const LyricWordView: FC<LyricWordViewProps> = memo(
 			</Button>
 		);
 	};
+
+	if (isHeaderLine) {
+		return (
+			<div className={styles.wordMainText} style={{ padding: "8px 0" }}>
+				{word.word}
+			</div>
+		);
+	}
 
 	return (
 		<div>

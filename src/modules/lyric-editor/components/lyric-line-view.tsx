@@ -25,6 +25,7 @@ import {
 } from "@radix-ui/themes";
 import { suggestedSplitsDialogAtom } from "$/states/dialogs.ts";
 import classNames from "classnames";
+import { toast } from "react-toastify";
 import { useAtom, type Atom, atom, useAtomValue, useStore } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
 import { selectAtom, splitAtom } from "jotai/utils";
@@ -47,6 +48,7 @@ import {
 	showTimestampsAtom,
 	showWordRomanizationInputAtom,
 	compactBGInSyncAtom,
+	geniusCategorizationEnabledAtom,
 } from "$/modules/settings/states/index.ts";
 import {
 	syncLevelModeAtom,
@@ -62,6 +64,7 @@ import {
 } from "$/states/main.ts";
 import { type LyricLine, newLyricLine, newLyricWord } from "$/types/ttml.ts";
 import { msToTimestamp } from "$/utils/timestamp.ts";
+import { currentTimeAtom } from "$/modules/audio/states/index.ts";
 import { getSynchronizableUnits } from "../utils/lyric-states.ts";
 import styles from "./index.module.css";
 import { draggingIdAtom, globalEnableInsertAtom } from "./lyric-line-view-states.ts";
@@ -105,11 +108,13 @@ const lineDisplayNumbersAtom = atom((get) => {
 	const displayNumbers: number[] = [];
 	let currentNumber = 0;
 
+	const categorizationEnabled = get(geniusCategorizationEnabledAtom);
 	for (const [index, line] of lyricLines.entries()) {
-		if (!index || !line.isBG) {
+		const isHeader = categorizationEnabled && /^\[\s*(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break)[\s\S]*?\]$/i.test(line.words.map(w => w.word).join(" "));
+		if (!isHeader && (!index || !line.isBG)) {
 			currentNumber++;
 		}
-		displayNumbers.push(currentNumber);
+		displayNumbers.push(isHeader ? 0 : currentNumber);
 	}
 
 	return displayNumbers;
@@ -355,6 +360,41 @@ export const LyricLineView: FC<{
 	const toolMode = useAtomValue(toolModeAtom);
 	const syncLevelMode = useAtomValue(syncLevelModeAtom);
 	const store = useStore();
+
+	const activeGeniusHeader = useMemo(() => {
+		if (!store.get(geniusCategorizationEnabledAtom)) return null;
+		return line.geniusHeader;
+	}, [line.geniusHeader, store]);
+
+	const headerType = useMemo(() => {
+		if (!activeGeniusHeader) return "iris";
+		const match = activeGeniusHeader.match(
+			/^\[(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break).*?\]$/i,
+		);
+		return match ? match[1].toLowerCase() : "iris";
+	}, [activeGeniusHeader]);
+
+	const isSectionStart = useMemo(() => {
+		if (!activeGeniusHeader) return false;
+		if (lineIndex === 0) return true;
+		const prevLine = store.get(lyricLinesAtom).lyricLines[lineIndex - 1];
+		return prevLine?.geniusHeader !== activeGeniusHeader;
+	}, [activeGeniusHeader, lineIndex, store]);
+
+	const isHeaderLine = useMemo(() => {
+		if (!store.get(geniusCategorizationEnabledAtom)) return false;
+		return /^\[\s*(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break)[\s\S]*?\]$/i.test(line.words.map(w => w.word).join(" "));
+	}, [line.words, store]);
+
+	const categoryColor = useMemo(() => {
+		if (!headerType) return "iris";
+		if (headerType.includes("chorus") || headerType.includes("refren") || headerType.includes("refrain")) return "pink";
+		if (headerType.includes("verse") || headerType.includes("strofa") || headerType.includes("couplet")) return "blue";
+		if (headerType.includes("bridge")) return "orange";
+		if (headerType.includes("intro") || headerType.includes("outro") || headerType.includes("skit") || headerType.includes("interlude")) return "gray";
+		return "iris";
+	}, [headerType]);
+
 	const wordsContainerRef = useRef<HTMLDivElement>(null);
 	const blockDragRef = useRef(false);
 	const lastClickTimeRef = useRef(0);
@@ -567,7 +607,7 @@ export const LyricLineView: FC<{
 					editingRomanWordIndex={editingRomanWordIndex}
 				/>
 			)}
-			{enableInsert && (
+			{enableInsert && !isHeaderLine && (
 				<InsertLineButton
 					lineIndex={lineIndex}
 					selectedLinesCountAtom={selectedLinesCountAtom}
@@ -600,6 +640,20 @@ export const LyricLineView: FC<{
 						align="center"
 						gapX="4"
 						draggable={toolMode === ToolMode.Edit}
+						style={{
+							...(isHeaderLine ? {
+								backgroundColor: `var(--${categoryColor}-2)`,
+								borderLeft: `3px solid var(--${categoryColor}-9)`,
+								paddingLeft: "12px",
+								boxShadow: "none",
+								borderTop: "none",
+								borderRight: "none",
+								borderBottom: "none",
+								borderRadius: "0",
+								marginTop: "16px",
+								marginBottom: "8px",
+							} : {})
+						}}
 						onPointerDown={(evt) => {
 							blockDragRef.current =
 								(evt.target as HTMLElement | null)?.tagName === "INPUT";
@@ -742,26 +796,28 @@ export const LyricLineView: FC<{
 						asChild
 					><div
 						>
-							<Flex
-								direction="column"
-								align="center"
-								justify="center"
-								ml="3"
-								style={{ minWidth: "40px" }}
-							>
-								<Text
-									className={classNames(
-										styles.lineNumber,
-										line.ignoreSync && styles.ignored,
-									)}
+							{!isHeaderLine && (
+								<Flex
+									direction="column"
 									align="center"
-									color="gray"
+									justify="center"
+									ml="3"
+									style={{ minWidth: "40px" }}
 								>
-									{displayNumber}
-								</Text>
-								{line.isBG && <VideoBackgroundEffectFilled color="var(--accent-9)" />}
-								{line.isDuet && <TextAlignRightFilled color="#44AA33" />}
-							</Flex>
+									<Text
+										className={classNames(
+											styles.lineNumber,
+											line.ignoreSync && styles.ignored,
+										)}
+										align="center"
+										color="gray"
+									>
+										{displayNumber > 0 && displayNumber}
+									</Text>
+									{line.isBG && <VideoBackgroundEffectFilled color="var(--accent-9)" />}
+									{line.isDuet && <TextAlignRightFilled color="#44AA33" />}
+								</Flex>
+							)}
 							<div
 								className={classNames(
 									styles.lyricLineContainer,
@@ -769,20 +825,106 @@ export const LyricLineView: FC<{
 									toolMode === ToolMode.Sync && styles.sync,
 								)}
 							>
+								{isSectionStart && (
+									<Flex gap="2" mb="1" align="center">
+										<Text
+											size="1"
+											weight="bold"
+											color={categoryColor as any}
+											style={{ opacity: 0.8, textTransform: "uppercase" }}
+										>
+											{activeGeniusHeader}
+										</Text>
+										<Button
+											size="1"
+											variant="ghost"
+											onClick={(e) => {
+												e.stopPropagation();
+												const currentTime = store.get(currentTimeAtom);
+												editLyricLines((state) => {
+													const targetLine = state.lyricLines[lineIndex];
+													const duration = targetLine.endTime - targetLine.startTime;
+													targetLine.startTime = currentTime;
+													targetLine.endTime = currentTime + (duration > 0 ? duration : 2000);
+													
+													// Update words proportionally or just set them
+													if (targetLine.words.length > 0) {
+														let currentWordTime = targetLine.startTime;
+														const wordDuration = (targetLine.endTime - targetLine.startTime) / targetLine.words.length;
+														for (const word of targetLine.words) {
+															word.startTime = currentWordTime;
+															word.endTime = currentWordTime + wordDuration;
+															currentWordTime += wordDuration;
+														}
+													}
+												});
+											}}
+										>
+											{t("experimentalFeatures.geniusCategorization.snapToPlayhead", "Snap to Playhead")}
+										</Button>
+										<Button
+											size="1"
+											variant="ghost"
+											onClick={(e) => {
+												e.stopPropagation();
+												const currentHeader = activeGeniusHeader;
+												const lyricLines = store.get(lyricLinesAtom).lyricLines;
+												let prevLine = null;
+												for (let i = lineIndex - 1; i >= 0; i--) {
+													const isPrevSectionStart = i === 0 || lyricLines[i - 1].geniusHeader !== currentHeader;
+													if (lyricLines[i].geniusHeader === currentHeader && isPrevSectionStart && lyricLines[i].startTime > 0) {
+														prevLine = lyricLines[i];
+														break;
+													}
+												}
+
+												if (prevLine) {
+													editLyricLines((state) => {
+														const targetLine = state.lyricLines[lineIndex];
+														targetLine.startTime = prevLine.startTime;
+														targetLine.endTime = prevLine.endTime;
+														
+														// Copy words timing
+														for (let i = 0; i < Math.min(targetLine.words.length, prevLine.words.length); i++) {
+															targetLine.words[i].startTime = prevLine.words[i].startTime;
+															targetLine.words[i].endTime = prevLine.words[i].endTime;
+														}
+													});
+													toast.success(t("common.success", "Success"));
+												} else {
+													toast.info(t("experimentalFeatures.geniusCategorization.noPreviousFound", "No previous identical header found with timing."));
+												}
+											}}
+										>
+											{t("experimentalFeatures.geniusCategorization.copyPrevious", "Copy Previous Timing")}
+										</Button>
+									</Flex>
+								)}
 								<div
 									className={classNames(
 										styles.lyricWordsContainer,
 										toolMode === ToolMode.Edit && styles.edit,
 										toolMode === ToolMode.Sync && styles.sync,
 										!showTimestamps && styles.hideTimestamps,
+										isHeaderLine && styles.headerLine,
 									)}
 									ref={wordsContainerRef}
+									style={{
+										backgroundColor: activeGeniusHeader
+											? `var(--${categoryColor}-2)`
+											: undefined,
+										borderLeft: activeGeniusHeader
+											? `2px solid var(--${categoryColor}-9)`
+											: undefined,
+										borderRadius: isSectionStart ? "var(--radius-2)" : "0",
+										padding: activeGeniusHeader ? "4px 8px" : undefined,
+									}}
 								>
 									{words.map((wordAtom, wi) => {
 										const word = store.get(wordAtom);
 										return (
 											<Fragment key={`word-${word.id}`}>
-												{enableInsert && (
+												{enableInsert && !isHeaderLine && (
 													<IconButton
 														size="1"
 														variant="soft"
@@ -813,8 +955,10 @@ export const LyricLineView: FC<{
 														wordIndex={wi}
 														line={line}
 														lineIndex={lineIndex}
+														isHeaderLine={isHeaderLine}
 													/>
 													{toolMode === ToolMode.Edit &&
+														!isHeaderLine &&
 														showWordRomanizationInput && (
 															<RomanWordView
 																wordAtom={wordAtom}
@@ -882,7 +1026,7 @@ export const LyricLineView: FC<{
 										/>
 									)}
 								</div>
-								{toolMode === ToolMode.Edit && (
+								{toolMode === ToolMode.Edit && !isHeaderLine && (
 									<>
 										{showTranslation && (
 											<SubLineEdit
@@ -901,7 +1045,7 @@ export const LyricLineView: FC<{
 									</>
 								)}
 							</div>
-							{toolMode === ToolMode.Edit && (
+							{toolMode === ToolMode.Edit && !isHeaderLine && (
 								<Flex p="3">
 									<IconButton
 										size="1"
@@ -916,7 +1060,7 @@ export const LyricLineView: FC<{
 									</IconButton>
 								</Flex>
 							)}
-							{toolMode === ToolMode.Sync && showTimestamps && (
+							{toolMode === ToolMode.Sync && showTimestamps && !isHeaderLine && (
 								<Flex pr="3" gap="1" direction="column" align="stretch">
 									<div className={styles.startTime} ref={startTimeRef}>
 										{msToTimestamp(line.startTime)}

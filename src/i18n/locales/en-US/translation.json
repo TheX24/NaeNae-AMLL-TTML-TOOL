@@ -168,6 +168,7 @@
 			"continuousSync": "Commit",
 			"endSync": "Mark End",
 			"loading": "Panel loading…",
+			"experimentalFeatures": "Experimental Features",
 			"manageQuickFixExclusions": {
 				"title": "Manage Quick Fix Exclusions",
 				"description": "Add words to ignore in quick fixes.",
@@ -1096,5 +1097,21 @@
 		"description": "Choose a suggested split pattern for this {type}.",
 		"apply": "Apply Suggestion",
 		"noSuggestions": "No automated split suggestions available for this content."
+	},
+	"experimentalFeatures": {
+		"title": "Experimental Features",
+		"description": "These features are currently in development and may be unstable. Use with caution.",
+		"geniusCategorization": {
+			"title": "Genius Header Categorization",
+			"description": "Automatically detect and categorize Genius-style section headers (e.g., [Chorus]). Provides color-coded sections and tools to copy previous timings.",
+			"usageInfo": "Once enabled, section headers will be styled differently in the editor. You can click on them to access specialized tools like 'Copy Previous Timing' and 'Snap to Playhead'.",
+			"dialogTitle": "Genius Headers Detected!",
+			"dialogDesc": "We've detected section headers in your lyrics. Would you like to enable the experimental 'Genius Header Categorization' feature to help with your workflow?",
+			"enableNow": "Enable Now",
+			"maybeLater": "Maybe Later",
+			"copyPrevious": "Copy Previous Timing",
+			"snapToPlayhead": "Snap to Playhead",
+			"noPreviousFound": "No previous identical header found with timing."
+		}
 	}
 }

@@ -39,6 +39,7 @@ import { atom, useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import { Beaker24Regular } from "@fluentui/react-icons";
 
 import {
 	displayRomanizationInSyncAtom,
@@ -47,7 +48,8 @@ import {
 	showLineRomanizationAtom,
 	showLineTranslationAtom,
 	showWordRomanizationInputAtom,
-} from "$/modules/settings/states";
+	experimentalFeaturesDialogOpenAtom,
+} from "$/modules/settings/states/index.ts";
 import {
 	editingTimeFieldAtom,
 	lyricLinesAtom,
@@ -55,6 +57,7 @@ import {
 	selectedLinesAtom,
 	selectedWordsAtom,
 	showEndTimeAsDurationAtom,
+	toolModeAtom,
 } from "$/states/main.ts";
 import { grammarCheckDialogAtom } from "$/modules/lyric-editor/modals/GrammarCheckDialog.tsx";
 import { type LyricLine, type LyricWord, newLyricLine } from "$/types/ttml";
@@ -883,6 +886,7 @@ const PhoneticSection = () => {
 
 export const EditModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTMLDivElement, { isSidebar?: boolean }>(
 	({ isSidebar }, ref) => {
+		const store = useStore();
 		const editLyricLines = useSetImmerAtom(lyricLinesAtom);
 		const { t } = useTranslation();
 
@@ -1037,7 +1041,9 @@ export const EditModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTMLDiv
 					<AuxiliaryDisplayField />
 				</RibbonSection>
 				<RibbonSection label={t("ribbonBar.editMode.tools", "工具")} isSidebar={isSidebar}>
-					<GrammarCheckButton />
+					<Flex gap="2" direction="column">
+						<GrammarCheckButton />
+					</Flex>
 				</RibbonSection>
 			</RibbonFrame>
 		);

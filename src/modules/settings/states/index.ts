@@ -1,3 +1,4 @@
+import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
 export enum SyncJudgeMode {
@@ -314,3 +315,17 @@ export const appearancePresetsAtom = atomWithStorage<AppearancePreset[]>(
 	"appearancePresets",
 	[],
 );
+
+export const geniusCategorizationEnabledAtom = atomWithStorage<boolean>(
+	"geniusCategorizationEnabled",
+	false,
+);
+
+export const experimentalFeaturesDialogOpenAtom = atom(false);
+
+export const geniusHeaderDetectionDialogShownAtom = atomWithStorage<boolean>(
+	"geniusHeaderDetectionDialogShown",
+	false,
+);
+
+export const geniusHeaderDetectionDialogOpenAtom = atom(false);
