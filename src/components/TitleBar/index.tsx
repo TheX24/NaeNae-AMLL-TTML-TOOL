@@ -1,10 +1,11 @@
-import { Flex, SegmentedControl, Text } from "@radix-ui/themes";
-import { useAtom } from "jotai";
+import { Button, Flex, IconButton, SegmentedControl, Text } from "@radix-ui/themes";
+import { useAtom, useSetAtom } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
 import { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import WindowControls from "$/components/WindowControls";
-import { boykisserModeAtom } from "$/modules/settings/states";
+import { boykisserModeAtom, experimentalFeaturesDialogOpenAtom } from "$/modules/settings/states";
+import { Beaker24Regular } from "@fluentui/react-icons";
 import {
 	keySwitchEditModeAtom,
 	keySwitchPreviewModeAtom,
@@ -26,6 +27,7 @@ export const TitleBar: FC = () => {
 	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const { t } = useTranslation();
 	const [boykisserMode, setBoykisserMode] = useAtom(boykisserModeAtom);
+	const setExperimentalDialogOpen = useSetAtom(experimentalFeaturesDialogOpenAtom);
 
 	const onSwitchEditMode = useCallback(() => {
 		setToolMode(ToolMode.Edit);
@@ -81,6 +83,14 @@ export const TitleBar: FC = () => {
 							onClick={() => setBoykisserMode(!boykisserMode)}
 							title={t("topBar.boykisser", "boykisser")}
 						/>
+						<IconButton
+							variant="ghost"
+							color="gray"
+							onClick={() => setExperimentalDialogOpen(true)}
+							title={t("ribbonBar.experimentalFeatures", "Experimental Features")}
+						>
+							<Beaker24Regular />
+						</IconButton>
 						<Flex
 							direction="column"
 							align="end"

@@ -38,6 +38,24 @@ export function ChangelogDialog() {
 				<ScrollArea type="always" scrollbars="vertical" style={{ height: "calc(100% - 60px)" }}>
 					<Flex direction="column" gap="5" pr="4">
 						<Box>
+							<Heading size="4" mb="2" color="indigo">v0.6.7 Updates (Genius Section Categorization)</Heading>
+							<Flex direction="column" gap="3">
+								<Text size="2">
+									<strong>Genius Section Categorization:</strong> Implemented intelligent section detection (Chorus, Verse, etc.) with professional, color-coded grouping and prominent headers in the editor.
+								</Text>
+								<Text size="2">
+									<strong>Clean Header Architecture:</strong> Re-engineered headers to look like clean markers by stripping away word boxes, timestamps, and redundant line-specific UI across all tabs (Edit, Time, Preview).
+								</Text>
+								<Text size="2">
+									<strong>Smart Line Numbering:</strong> Section headers are now automatically excluded from the song's line count, ensuring the first lyric line of your song always starts correctly at "1".
+								</Text>
+								<Text size="2">
+									<strong>Context-Aware Timing:</strong> Added a "Copy Previous" automation tool for categorized headers to instantly apply timings from identical previous sections.
+								</Text>
+							</Flex>
+						</Box>
+
+						<Box>
 							<Heading size="4" mb="2" color="ruby">v0.6.6 Updates (Preview Stability & Toxi Fixes)</Heading>
 							<Flex direction="column" gap="3">
 								<Text size="2">

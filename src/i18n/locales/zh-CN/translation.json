@@ -156,6 +156,7 @@
 			"continuousSync": "提交",
 			"endSync": "标记结束",
 			"loading": "面板加载中…",
+			"experimentalFeatures": "实验性功能",
 			"manageQuickFixExclusions": {
 				"title": "管理快速修复排除项",
 				"description": "添加要在快速修复中忽略的单词。",
@@ -934,5 +935,21 @@
 		"offlineReady": "网站已成功离线缓存，后续可离线访问本网页",
 		"updateRefresh": "网站已更新，刷新网页以使用最新版本！",
 		"refresh": "刷新"
+	},
+	"experimentalFeatures": {
+		"title": "实验性功能",
+		"description": "这些功能目前处于开发阶段，可能不稳定。请谨慎使用。",
+		"geniusCategorization": {
+			"title": "Genius 歌词分段标记",
+			"description": "自动检测并分类 Genius 风格的分段标记（例如 [Chorus]）。提供颜色标识的分段、复制前一段相同标记的时间和吸附到播放头的功能。",
+			"usageInfo": "启用后，分段标记在编辑器中将具有不同的样式。您可以点击它们以访问“复制前一段时间”和“吸附到播放头”等专用工具。",
+			"dialogTitle": "检测到 Genius 分段标记！",
+			"dialogDesc": "我们在您的歌词中检测到了分段标记。您是否要启用实验性的“Genius 歌词分段标记”功能以辅助您的工作流程？",
+			"enableNow": "立即启用",
+			"maybeLater": "以后再说",
+			"copyPrevious": "复制前一段时间",
+			"snapToPlayhead": "吸附到播放头",
+			"noPreviousFound": "未找到具有时间的相同前一段标记。"
+		}
 	}
 }

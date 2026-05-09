@@ -35,7 +35,7 @@ import {
 } from "$/states/main.ts";
 
 import { type LyricLine, newLyricLine, newLyricWord } from "$/types/ttml";
-import { importAddSpacesAtom, importSplitHyphensAtom } from "$/modules/settings/states/index.ts";
+import { importAddSpacesAtom, importSplitHyphensAtom, geniusCategorizationEnabledAtom, geniusHeaderDetectionDialogOpenAtom, geniusHeaderDetectionDialogShownAtom } from "$/modules/settings/states/index.ts";
 
 
 import { error as logError } from "$/utils/logging.ts";
@@ -148,6 +148,9 @@ export const ImportFromText = () => {
 	const [addSpaces, setAddSpaces] = useAtom(importAddSpacesAtom);
 	const [splitHyphens, setSplitHyphens] = useAtom(importSplitHyphensAtom);
 	const [isGuideClicked, setIsGuideClicked] = useAtom(isGuideClickedAtom);
+	const [geniusCategorizationEnabled, setGeniusCategorizationEnabled] = useAtom(geniusCategorizationEnabledAtom);
+	const setGeniusDetectionDialogOpen = useSetAtom(geniusHeaderDetectionDialogOpenAtom);
+	const geniusDetectionDialogShown = useAtomValue(geniusHeaderDetectionDialogShownAtom);
 	const setValue = useSetAtom(textValueAtom);
 
 
@@ -177,9 +180,21 @@ export const ImportFromText = () => {
 
 			const lines = text.split("\n");
 			const result: LyricLine[] = [];
+			let currentGeniusHeader: string | undefined = undefined;
 
 			function addLine(orig = "", trans = "", roman = "") {
-				let finalOrig = orig;
+				let finalOrig = orig.trim();
+
+				if (
+					geniusCategorizationEnabled &&
+					/^\[(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break).*?\]$/i.test(
+						finalOrig,
+					)
+				) {
+					currentGeniusHeader = finalOrig;
+					return null;
+				}
+
 				let isBG = false;
 				let isDuet = false;
 
@@ -210,6 +225,7 @@ export const ImportFromText = () => {
 					romanLyric: roman.replace(/\\/g, ""),
 					isBG,
 					isDuet,
+					geniusHeader: currentGeniusHeader,
 				};
 
 				result.push(line);
@@ -241,8 +257,8 @@ export const ImportFromText = () => {
 							const subText1 = sub1 ? lines[i + ++ii] : "";
 							const subText2 = sub2 ? lines[i + ++ii] : "";
 							const line = addLine(orig);
-							if (sub1) line[sub1] = subText1;
-							if (sub2) line[sub2] = subText2;
+							if (line && sub1) line[sub1] = subText1;
+							if (line && sub2) line[sub2] = subText2;
 						}
 						return;
 					}
@@ -253,8 +269,8 @@ export const ImportFromText = () => {
 							const subText1 = sub1 ? parts[1] : "";
 							const subText2 = sub2 ? parts[2] : "";
 							const line = addLine(orig);
-							if (sub1) line[sub1] = subText1;
-							if (sub2) line[sub2] = subText2;
+							if (line && sub1) line[sub1] = subText1;
+							if (line && sub2) line[sub2] = subText2;
 						}
 						return;
 					}
@@ -379,8 +395,11 @@ export const ImportFromText = () => {
 				continue;
 			}
 
-			// Automatically remove genius tags e.g. [Chorus: artist]
+			// Handle genius tags e.g. [Chorus: artist]
 			if (currentLine.startsWith("[") && currentLine.endsWith("]")) {
+				if (geniusCategorizationEnabled) {
+					processedLines.push(currentLine);
+				}
 				continue;
 			}
 
@@ -410,9 +429,15 @@ export const ImportFromText = () => {
 		setWordSeparator("\\");
 		setAddSpaces(false);
 		setSplitHyphens(false);
+
+		// Trigger Genius detection if headers were found but skipped (because disabled)
+		const hasHeaders = lines.some(l => l.trim().startsWith("[") && l.trim().endsWith("]"));
+		if (hasHeaders && !geniusCategorizationEnabled && !geniusDetectionDialogShown) {
+			setGeniusDetectionDialogOpen(true);
+		}
 		
 		toast.success(t("textImportDialog.processedSuccess", "Lyrics automated for syllable sync."));
-	}, [store, setValue, t, setWordSeparator, setAddSpaces, setSplitHyphens]);
+	}, [store, setValue, t, setWordSeparator, setAddSpaces, setSplitHyphens, geniusCategorizationEnabled, geniusDetectionDialogShown, setGeniusDetectionDialogOpen]);
 
 
 	return (
@@ -655,6 +680,16 @@ export const ImportFromText = () => {
 											disabled={!enableEmptyBeat}
 											value={emptyBeatSymbol}
 											onChange={(evt) => setEmptyBeatSymbol(evt.currentTarget.value)}
+										/>
+
+										<Separator size="4" style={{ gridColumn: "span 2" }} />
+
+										<PrefText>
+											{t("experimentalFeatures.geniusCategorization.title", "Genius Header Categorization")}
+										</PrefText>
+										<Switch
+											checked={geniusCategorizationEnabled}
+											onCheckedChange={setGeniusCategorizationEnabled}
 										/>
 									</Grid>
 								</Flex>

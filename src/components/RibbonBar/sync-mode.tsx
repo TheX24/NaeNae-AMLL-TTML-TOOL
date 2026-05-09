@@ -9,7 +9,7 @@
  * https://github.com/NaeNaeTart/NaeNae-AMLL-TTML-TOOL/blob/main/LICENSE
  */
 
-import { DeleteRegular, MoreHorizontalRegular } from "@fluentui/react-icons";
+import { DeleteRegular, MoreHorizontalRegular, Beaker24Regular } from "@fluentui/react-icons";
 import {
 	Checkbox,
 	Dialog,
@@ -21,8 +21,10 @@ import {
 	Switch,
 	Text,
 	TextField,
+	Button,
+	Separator,
 } from "@radix-ui/themes";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useStore } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
 import { type FC, forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -37,6 +39,7 @@ import {
 	quickFixesAtom,
 	showTimestampsAtom,
 	showWordRomanizationInputAtom,
+	experimentalFeaturesDialogOpenAtom,
 } from "$/modules/settings/states/index.ts";
 import {
 	currentEmptyBeatAtom,
@@ -92,6 +95,7 @@ const EmptyBeatField = () => {
 
 export const SyncModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTMLDivElement, { isSidebar?: boolean }>(
 	({ isSidebar }, ref) => {
+		const store = useStore();
 		const [visualizeTimestampUpdate, setVisualizeTimestampUpdate] = useAtom(
 			visualizeTimestampUpdateAtom,
 		);
@@ -506,6 +510,16 @@ export const SyncModeRibbonBar: FC<{ isSidebar?: boolean }> = forwardRef<HTMLDiv
 									</Flex>
 								))}
 							</Flex>
+						</Flex>
+						<Separator size="4" mt="4" mb="2" />
+						<Flex direction="column" gap="2">
+							<Button
+								variant="soft"
+								onClick={() => store.set(experimentalFeaturesDialogOpenAtom, true)}
+							>
+								<Beaker24Regular />
+								{t("ribbonBar.experimentalFeatures", "Experimental Features")}
+							</Button>
 						</Flex>
 					</Dialog.Content>
 				</Dialog.Root>

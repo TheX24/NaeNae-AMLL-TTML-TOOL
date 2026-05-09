@@ -12,7 +12,8 @@ import {
 	TimerRegular,
 	CheckmarkCircleRegular,
 	ShieldCheckmarkRegular,
-	LocalLanguageRegular
+	LocalLanguageRegular,
+	TaskListLtrRegular
 } from "@fluentui/react-icons";
 import { Box, Button, Dialog, Flex, Heading, ScrollArea, Text, Card, Grid, Popover, IconButton } from "@radix-ui/themes";
 import { useAtom } from "jotai";
@@ -30,6 +31,13 @@ export function WhatsNewDialog() {
 			icon: <StarRegular />,
 			color: "pink",
 			info: "Located in the Preview tab. Controls under Appearance > Preview allow adjusting wipe softness and bloom."
+		},
+		{
+			title: "Section Categorization",
+			description: "Intelligent Genius-style section detection (Chorus, Verse) with color-coded grouping and clean headers.",
+			icon: <TaskListLtrRegular />,
+			color: "pink",
+			info: "Automatically identifies sections during import and groups them visually. Headers are excluded from line count for a professional workflow."
 		},
 		{
 			title: "144Hz+ Rendering",

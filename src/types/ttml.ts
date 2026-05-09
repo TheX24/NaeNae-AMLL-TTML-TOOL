@@ -90,6 +90,7 @@ export interface LyricLine extends AMLLLyricLine {
 		 */
 		originalNextStartTime: number | null;
 	};
+	geniusHeader?: string;
 }
 
 export const newLyricLine = (): LyricLine => ({
