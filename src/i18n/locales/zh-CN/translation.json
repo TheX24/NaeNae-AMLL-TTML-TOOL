@@ -679,6 +679,20 @@
 			"full": "完整 TTML 指南"
 		}
 	},
+	"experimentalFeatures": {
+		"title": "实验性功能",
+		"description": "这些功能目前正在开发中，可能不稳定。请谨慎使用。",
+		"geniusCategorization": {
+			"title": "Genius 歌词分段分类",
+			"description": "自动检测并分类 Genius 风格的分段标题（如 [Chorus]）。提供复制先前时间轴和吸附到播放头等工具。",
+			"dialogTitle": "检测到 Genius 分段标题！",
+			"dialogDesc": "我们在您的歌词中检测到了分段标题。您是否要启用实验性的“Genius 歌词分段分类”功能来优化您的工作流程？",
+			"usageInfo": "启用后，分段标题将在编辑器中以不同的样式显示。您可以点击它们来使用“复制先前时间轴”和“吸附到播放头”等专门工具。",
+			"maybeLater": "稍后再说",
+			"enableNow": "立即启用",
+			"headersRestored": "分段标题已恢复。"
+		}
+	},
 	"lrclib": {
 		"placeholder": "标题 艺术家...",
 		"notFound": "未找到结果，请尝试不同的关键词",

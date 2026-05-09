@@ -19,7 +19,7 @@ import {
 import { Open16Regular, QuestionCircle16Regular } from "@fluentui/react-icons";
 import { atom, useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { memo, type PropsWithChildren, useCallback } from "react";
+import { memo, type PropsWithChildren, useCallback, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
 	confirmDialogAtom,
@@ -35,7 +35,7 @@ import {
 } from "$/states/main.ts";
 
 import { type LyricLine, newLyricLine, newLyricWord } from "$/types/ttml";
-import { importAddSpacesAtom, importSplitHyphensAtom, geniusCategorizationEnabledAtom, geniusHeaderDetectionDialogOpenAtom, geniusHeaderDetectionDialogShownAtom } from "$/modules/settings/states/index.ts";
+import { importAddSpacesAtom, importSplitHyphensAtom, geniusCategorizationEnabledAtom, geniusHeaderDetectionDialogOpenAtom, geniusHeaderDetectionDialogShownAtom, geniusHeaderRestorationTextAtom } from "$/modules/settings/states/index.ts";
 
 
 import { error as logError } from "$/utils/logging.ts";
@@ -151,11 +151,21 @@ export const ImportFromText = () => {
 	const [geniusCategorizationEnabled, setGeniusCategorizationEnabled] = useAtom(geniusCategorizationEnabledAtom);
 	const setGeniusDetectionDialogOpen = useSetAtom(geniusHeaderDetectionDialogOpenAtom);
 	const geniusDetectionDialogShown = useAtomValue(geniusHeaderDetectionDialogShownAtom);
+	const [restorationText, setRestorationText] = useAtom(geniusHeaderRestorationTextAtom);
 	const setValue = useSetAtom(textValueAtom);
 
 
 
 
+
+	// Restore headers if the user enables the feature while we have a pending restoration
+	useEffect(() => {
+		if (geniusCategorizationEnabled && restorationText) {
+			setValue(restorationText);
+			setRestorationText(null);
+			toast.info(t("experimentalFeatures.geniusCategorization.headersRestored", "Section headers restored."));
+		}
+	}, [geniusCategorizationEnabled, restorationText, setValue, setRestorationText, t]);
 
 	const store = useStore();
 
@@ -187,12 +197,11 @@ export const ImportFromText = () => {
 
 				if (
 					geniusCategorizationEnabled &&
-					/^\[(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break).*?\]$/i.test(
+					/^\[\s*(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break)[\s\S]*?\]$/i.test(
 						finalOrig,
 					)
 				) {
 					currentGeniusHeader = finalOrig;
-					return null;
 				}
 
 				let isBG = false;
@@ -433,6 +442,28 @@ export const ImportFromText = () => {
 		// Trigger Genius detection if headers were found but skipped (because disabled)
 		const hasHeaders = lines.some(l => l.trim().startsWith("[") && l.trim().endsWith("]"));
 		if (hasHeaders && !geniusCategorizationEnabled && !geniusDetectionDialogShown) {
+			// Save the processed text WITH headers for potential restoration
+			const processedWithHeaders: string[] = [];
+			for (const line of lines) {
+				const currentLine = line.trim();
+				if (!currentLine) continue;
+				if (currentLine.startsWith("[") && currentLine.endsWith("]")) {
+					processedWithHeaders.push(currentLine);
+					continue;
+				}
+				const bgMatch = currentLine.match(/^(.*?)\s*\((.*)\)\s*$/);
+				if (bgMatch) {
+					const mainPart = bgMatch[1].trim();
+					const bgPart = bgMatch[2].trim();
+					if (mainPart) processedWithHeaders.push(processLineContent(mainPart));
+					if (bgPart) processedWithHeaders.push(`<${processLineContent(bgPart)}`);
+				} else if (currentLine.startsWith("(") && currentLine.endsWith(")")) {
+					processedWithHeaders.push(`<${processLineContent(currentLine.slice(1, -1))}`);
+				} else {
+					processedWithHeaders.push(processLineContent(currentLine));
+				}
+			}
+			setRestorationText(processedWithHeaders.join("\n"));
 			setGeniusDetectionDialogOpen(true);
 		}
 		
@@ -682,15 +713,18 @@ export const ImportFromText = () => {
 											onChange={(evt) => setEmptyBeatSymbol(evt.currentTarget.value)}
 										/>
 
-										<Separator size="4" style={{ gridColumn: "span 2" }} />
-
-										<PrefText>
-											{t("experimentalFeatures.geniusCategorization.title", "Genius Header Categorization")}
-										</PrefText>
-										<Switch
-											checked={geniusCategorizationEnabled}
-											onCheckedChange={setGeniusCategorizationEnabled}
-										/>
+										{geniusCategorizationEnabled && (
+											<>
+												<Separator size="4" style={{ gridColumn: "span 2" }} />
+												<PrefText>
+													{t("experimentalFeatures.geniusCategorization.title", "Genius Header Categorization")}
+												</PrefText>
+												<Switch
+													checked={geniusCategorizationEnabled}
+													onCheckedChange={setGeniusCategorizationEnabled}
+												/>
+											</>
+										)}
 									</Grid>
 								</Flex>
 							</Flex>

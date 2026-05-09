@@ -731,6 +731,20 @@
 			"full": "Full TTML Guide"
 		}
 	},
+	"experimentalFeatures": {
+		"title": "Experimental Features",
+		"description": "These features are currently in development and may be unstable. Use with caution.",
+		"geniusCategorization": {
+			"title": "Genius Header Categorization",
+			"description": "Automatically detect and categorize Genius-style section headers (e.g., [Chorus]). Provides tools to copy previous timings and snap to playhead.",
+			"dialogTitle": "Genius Headers Detected!",
+			"dialogDesc": "We've detected section headers in your lyrics. Would you like to enable the experimental 'Genius Header Categorization' feature to help with your workflow?",
+			"usageInfo": "Once enabled, section headers will be styled differently in the editor. You can click on them to access specialized tools like 'Copy Previous Timing' and 'Snap to Playhead'.",
+			"maybeLater": "Maybe Later",
+			"enableNow": "Enable Now",
+			"headersRestored": "Section headers restored."
+		}
+	},
 	"lrclib": {
 		"placeholder": "Title Artist...",
 		"notFound": "No results found, please try different keywords",

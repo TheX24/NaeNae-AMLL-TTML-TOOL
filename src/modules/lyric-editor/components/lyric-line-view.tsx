@@ -49,6 +49,7 @@ import {
 	showWordRomanizationInputAtom,
 	compactBGInSyncAtom,
 	geniusCategorizationEnabledAtom,
+	advGeniusHeaderColorAtom,
 } from "$/modules/settings/states/index.ts";
 import {
 	syncLevelModeAtom,
@@ -366,12 +367,14 @@ export const LyricLineView: FC<{
 		return line.geniusHeader;
 	}, [line.geniusHeader, store]);
 
+	const customHeaderColor = useAtomValue(advGeniusHeaderColorAtom);
+
 	const headerType = useMemo(() => {
-		if (!activeGeniusHeader) return "iris";
+		if (!activeGeniusHeader) return "accent";
 		const match = activeGeniusHeader.match(
 			/^\[(Chorus|Verse|Bridge|Intro|Outro|Pre-Chorus|Hook|Strofa|Refren|Skit|Interlude|Instrumental|Pre-Refren|Partea|Slofa|Section|Part|S\d+|V\d+|C\d+|Strophe|Refrain|Pont|Couplet|Refrain|Break).*?\]$/i,
 		);
-		return match ? match[1].toLowerCase() : "iris";
+		return match ? match[1].toLowerCase() : "accent";
 	}, [activeGeniusHeader]);
 
 	const isSectionStart = useMemo(() => {
@@ -387,12 +390,12 @@ export const LyricLineView: FC<{
 	}, [line.words, store]);
 
 	const categoryColor = useMemo(() => {
-		if (!headerType) return "iris";
+		if (!headerType) return "accent";
 		if (headerType.includes("chorus") || headerType.includes("refren") || headerType.includes("refrain")) return "pink";
 		if (headerType.includes("verse") || headerType.includes("strofa") || headerType.includes("couplet")) return "blue";
 		if (headerType.includes("bridge")) return "orange";
 		if (headerType.includes("intro") || headerType.includes("outro") || headerType.includes("skit") || headerType.includes("interlude")) return "gray";
-		return "iris";
+		return "accent";
 	}, [headerType]);
 
 	const wordsContainerRef = useRef<HTMLDivElement>(null);
@@ -830,8 +833,12 @@ export const LyricLineView: FC<{
 										<Text
 											size="1"
 											weight="bold"
-											color={categoryColor as any}
-											style={{ opacity: 0.8, textTransform: "uppercase" }}
+											color={customHeaderColor ? undefined : (categoryColor as any)}
+											style={{ 
+												opacity: 0.8, 
+												textTransform: "uppercase",
+												color: customHeaderColor || undefined
+											}}
 										>
 											{activeGeniusHeader}
 										</Text>
@@ -911,10 +918,12 @@ export const LyricLineView: FC<{
 									ref={wordsContainerRef}
 									style={{
 										backgroundColor: activeGeniusHeader
-											? `var(--${categoryColor}-2)`
+											? customHeaderColor 
+												? `${customHeaderColor}15` // 15 is roughly 8% opacity
+												: `var(--${categoryColor}-2)`
 											: undefined,
 										borderLeft: activeGeniusHeader
-											? `2px solid var(--${categoryColor}-9)`
+											? `2px solid ${customHeaderColor || `var(--${categoryColor}-9)`}`
 											: undefined,
 										borderRadius: isSectionStart ? "var(--radius-2)" : "0",
 										padding: activeGeniusHeader ? "4px 8px" : undefined,
