@@ -210,6 +210,33 @@
 	opacity: 1;
 	--blur: 0px;
 }
+.lineSynced {
+	--line-gradient-position: -20%;
+	--line-shadow-blur: 4px;
+	--line-shadow-alpha: 0;
+	background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.85) var(--line-gradient-position),
+		rgba(255, 255, 255, 0.35) calc(var(--line-gradient-position) + 20%)
+	);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	text-shadow: 0 0 var(--line-shadow-blur)
+		rgba(255, 255, 255, var(--line-shadow-alpha));
+}
+.lineSynced[data-state="active"]:not(.dotLine) {
+	scale: 1.05;
+}
+.simple .lineSynced {
+	--line-gradient-position: 100%;
+	background-image: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 1) var(--line-gradient-position),
+		rgba(255, 255, 255, 0.3) calc(var(--line-gradient-position) + 50%)
+	);
+	text-shadow: none;
+}
 .simple .line[data-state="not-sung"] {
 	opacity: 0.45;
 }
@@ -366,6 +393,7 @@
 	font-weight: 600;
 	opacity: 0.72;
 	color: white;
+	background: none;
 	text-shadow: none;
 }
 

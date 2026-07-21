@@ -109,6 +109,41 @@ describe("groupSpicyTokens", () => {
 });
 
 describe("buildSpicyLines", () => {
+	it("marks a full-line timed word as line-synced and retains its text", () => {
+		const line = newLyricLine();
+		line.id = "line-synced";
+		line.startTime = 1_000;
+		line.endTime = 2_000;
+		line.romanLyric = "Zheng hang";
+		line.words = [
+			{
+				...newLyricWord(),
+				startTime: 1_000,
+				endTime: 2_000,
+				word: "Whole line",
+				romanWord: "Ignored per-line romanization",
+			},
+		];
+
+		const [normal] = buildSpicyLines([line], false, false);
+		const [romanized] = buildSpicyLines([line], false, true);
+
+		expect(normal).toMatchObject({ isLineSynced: true, text: "Whole line" });
+		expect(romanized).toMatchObject({ text: "Zheng hang" });
+	});
+
+	it("keeps multi-word karaoke lines on the word-synced path", () => {
+		const line = newLyricLine();
+		line.startTime = 0;
+		line.endTime = 1_000;
+		line.words = [
+			{ ...newLyricWord(), startTime: 0, endTime: 500, word: "Ka" },
+			{ ...newLyricWord(), startTime: 500, endTime: 1_000, word: "raoke" },
+		];
+
+		expect(buildSpicyLines([line], false, false)[0].isLineSynced).toBe(false);
+	});
+
 	it("places interlude dots on the next vocal line's side", () => {
 		const first = newLyricLine();
 		first.id = "first";

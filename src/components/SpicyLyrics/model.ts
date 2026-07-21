@@ -26,11 +26,40 @@ export interface SpicyLine {
 	id: string;
 	startTime: number;
 	endTime: number;
+	isLineSynced: boolean;
+	text?: string;
 	isBackground: boolean;
 	isDuet: boolean;
 	isDotLine?: boolean;
 	translation?: string;
 	words: SpicyToken[];
+}
+
+/**
+ * AMLL represents a line-synced lyric (including LRC imports) as one timed
+ * word spanning the entire line. Keep that signal at the line level: unlike a
+ * one-word karaoke line, a line-synced line is animated as a single glyph box.
+ */
+function isLineSynced(line: LyricLine) {
+	const timedWords = line.words.filter(
+		(word) => !/^\s+$/u.test(word.word) && valid(word.startTime, word.endTime),
+	);
+	return (
+		timedWords.length === 1 &&
+		timedWords[0].startTime === line.startTime &&
+		timedWords[0].endTime === line.endTime
+	);
+}
+
+function lineText(line: LyricLine, romanized: boolean) {
+	if (romanized && line.romanLyric?.trim()) return line.romanLyric;
+	return line.words
+		.map((word) =>
+			romanized && word.romanWord.trim().length > 0
+				? word.romanWord
+				: word.word,
+		)
+		.join("");
 }
 
 const isRtl = (text: string) =>
@@ -150,6 +179,7 @@ function dotLine(
 		id,
 		startTime,
 		endTime,
+		isLineSynced: false,
 		isBackground: false,
 		// An interlude leads into its following vocal line, so it uses that
 		// line's side rather than the side of the lyric that just finished.
@@ -194,6 +224,8 @@ export function buildSpicyLines(
 			id: line.id,
 			startTime: line.startTime,
 			endTime: line.endTime,
+			isLineSynced: isLineSynced(line),
+			text: lineText(line, romanized),
 			isBackground: !!line.isBG,
 			isDuet: !!line.isDuet,
 			translation: line.translatedLyric || undefined,

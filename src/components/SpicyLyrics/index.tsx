@@ -93,6 +93,11 @@ const glowSpline = new CubicSpline([
 	[0.6, 1],
 	[1, 0],
 ]);
+const lineGlowSpline = new CubicSpline([
+	[0, 0],
+	[0.5, 1],
+	[1, 0],
+]);
 const dotScaleSpline = new CubicSpline([
 	[0, 0.75],
 	[0.7, 1.05],
@@ -281,6 +286,7 @@ export const SpicyLyrics = memo(() => {
 	const lineNodes = useRef(new Map<string, HTMLDivElement>());
 	const wordNodes = useRef(new Map<string, HTMLElement>());
 	const springs = useRef(new Map<string, SpringSet>());
+	const lineGlowSprings = useRef(new Map<string, Spring>());
 	const slmAnimations = useRef(new Map<string, SlmAnimation>());
 	const scrollPauseUntil = useRef(0);
 	const lastLine = useRef<string | null>(null);
@@ -371,9 +377,46 @@ export const SpicyLyrics = memo(() => {
 							? 0
 							: Math.min(Math.abs(i - activeIndex) * 1.25, 6.8);
 					node.style.setProperty("--blur", `${blur}px`);
+					if (line.isLineSynced && !line.isDotLine) {
+						const lineProgress =
+							status === "active"
+								? progressAt(time, line.startTime, line.endTime)
+								: status === "sung"
+									? 1
+									: 0;
+						if (simple) {
+							// The normal line renderer writes this variable inline. Pin it here
+							// as well, otherwise switching into SLM leaves a stale mid-sweep
+							// normal-mode value that the SLM stylesheet cannot override.
+							node.style.setProperty("--line-gradient-position", "100%");
+							node.style.setProperty("--line-shadow-alpha", "0");
+						} else {
+							let glow = lineGlowSprings.current.get(line.id);
+							if (!glow) {
+								glow = new Spring(0, 1, 0.5);
+								lineGlowSprings.current.set(line.id, glow);
+							}
+							glow.setGoal(lineGlowSpline.at(lineProgress));
+							const currentGlow = glow.step(dt);
+							node.style.setProperty(
+								"--line-shadow-blur",
+								`${4 + 8 * currentGlow}px`,
+							);
+							node.style.setProperty(
+								"--line-shadow-alpha",
+								String(currentGlow * 0.5),
+							);
+							node.style.setProperty(
+								"--line-gradient-position",
+								`${status === "active" ? lineProgress * 100 : status === "sung" ? 100 : -20}%`,
+							);
+						}
+					}
 				}
 			}
 			for (const line of lines)
+				if (line.isLineSynced && !line.isDotLine) continue;
+				else
 				for (let wi = 0; wi < line.words.length; wi++) {
 					const word = line.words[wi];
 					const rootKey = keyFor(line, word, wi);
@@ -902,6 +945,7 @@ export const SpicyLyrics = memo(() => {
 						className={classNames(
 							styles.line,
 							line.isDotLine && styles.dotLine,
+						line.isLineSynced && styles.lineSynced,
 							line.isBackground && styles.backgroundLine,
 							line.isDuet && styles.duet,
 						)}
@@ -925,6 +969,8 @@ export const SpicyLyrics = memo(() => {
 									);
 								})}
 							</div>
+						) : line.isLineSynced ? (
+							line.text
 						) : (
 							groupSpicyTokens(line.words).map((group) => {
 								const first = group.items[0];
