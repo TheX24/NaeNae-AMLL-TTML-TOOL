@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	buildSpicyLines,
 	groupSpicyTokens,
+	isRtl,
 	type SpicyToken,
 	type SpicyWordGroup,
 } from "./model";
@@ -109,6 +110,19 @@ describe("groupSpicyTokens", () => {
 });
 
 describe("buildSpicyLines", () => {
+	it("uses the first strong character to detect RTL lines", () => {
+		expect(isRtl("  123 - שלום")).toBe(true);
+		expect(isRtl("Hello مرحبا")).toBe(false);
+
+		const line = newLyricLine();
+		line.startTime = 0;
+		line.endTime = 1_000;
+		line.words = [
+			{ ...newLyricWord(), startTime: 0, endTime: 1_000, word: "مرحبا" },
+		];
+		expect(buildSpicyLines([line], false, false)[0].isRtl).toBe(true);
+	});
+
 	it("marks a full-line timed word as line-synced and retains its text", () => {
 		const line = newLyricLine();
 		line.id = "line-synced";

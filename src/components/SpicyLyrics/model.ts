@@ -27,6 +27,7 @@ export interface SpicyLine {
 	startTime: number;
 	endTime: number;
 	isLineSynced: boolean;
+	isRtl: boolean;
 	text?: string;
 	isBackground: boolean;
 	isDuet: boolean;
@@ -62,8 +63,16 @@ function lineText(line: LyricLine, romanized: boolean) {
 		.join("");
 }
 
-const isRtl = (text: string) =>
-	/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u.test(text);
+/** Match Spicy's first-strong-character direction check. */
+export function isRtl(text: string) {
+	for (const character of text) {
+		if (/[\d\s,.;:?!()[\]{}"'\\/<>@#$%^&*_=+-]/u.test(character)) continue;
+		return /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFB4F\uFB50-\uFDFF\uFE70-\uFEFF]/u.test(
+			character,
+		);
+	}
+	return false;
+}
 const isCjk = (text: string) =>
 	/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(
 		text,
@@ -180,6 +189,7 @@ function dotLine(
 		startTime,
 		endTime,
 		isLineSynced: false,
+		isRtl: false,
 		isBackground: false,
 		// An interlude leads into its following vocal line, so it uses that
 		// line's side rather than the side of the lyric that just finished.
@@ -220,17 +230,21 @@ export function buildSpicyLines(
 		.filter((line) => valid(line.startTime, line.endTime))
 		.slice()
 		.sort((a, b) => a.startTime - b.startTime)
-		.map((line) => ({
-			id: line.id,
-			startTime: line.startTime,
-			endTime: line.endTime,
-			isLineSynced: isLineSynced(line),
-			text: lineText(line, romanized),
-			isBackground: !!line.isBG,
-			isDuet: !!line.isDuet,
-			translation: line.translatedLyric || undefined,
-			words: makeTokens(line.words, simple, romanized, !!line.isBG),
-		}));
+		.map((line) => {
+			const text = lineText(line, romanized);
+			return {
+				id: line.id,
+				startTime: line.startTime,
+				endTime: line.endTime,
+				isLineSynced: isLineSynced(line),
+				isRtl: isRtl(lineText(line, false)),
+				text,
+				isBackground: !!line.isBG,
+				isDuet: !!line.isDuet,
+				translation: line.translatedLyric || undefined,
+				words: makeTokens(line.words, simple, romanized, !!line.isBG),
+			};
+		});
 	const result: SpicyLine[] = [];
 	if (normalized[0]?.startTime >= 3000)
 		result.push(

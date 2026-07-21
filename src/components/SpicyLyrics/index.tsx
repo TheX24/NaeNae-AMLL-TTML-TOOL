@@ -33,6 +33,7 @@ import { CubicSpline, progressAt, Spring, stateAt } from "./math";
 import {
 	buildSpicyLines,
 	groupSpicyTokens,
+	isRtl,
 	type SpicyLine,
 	type SpicyToken,
 } from "./model";
@@ -868,6 +869,7 @@ export const SpicyLyrics = memo(() => {
 					wordBoundary && styles.wordBoundary,
 					word.allowInternalWrap && styles.breakableToken,
 				)}
+				dir={isRtl(word.text) ? "rtl" : undefined}
 			>
 				{letters
 					? letters
@@ -946,9 +948,11 @@ export const SpicyLyrics = memo(() => {
 							styles.line,
 							line.isDotLine && styles.dotLine,
 						line.isLineSynced && styles.lineSynced,
+						line.isRtl && styles.rtl,
 							line.isBackground && styles.backgroundLine,
 							line.isDuet && styles.duet,
-						)}
+					)}
+					dir={line.isRtl ? "rtl" : undefined}
 						onClick={() => seek(line.startTime)}
 					>
 						{line.isDotLine ? (
