@@ -48,7 +48,8 @@
 .background,
 .backgroundCanvas,
 .colorBackground,
-.staticBackground {
+.staticBackground,
+.staticFallback {
 	position: absolute;
 	inset: 0;
 	width: 100%;
@@ -57,28 +58,79 @@
 }
 
 .background {
-	background: radial-gradient(
-		circle at 20% 10%,
-		color-mix(in srgb, var(--spicy-accent) 65%, transparent),
-		#111 65%
-	);
+	overflow: hidden;
+	background: #121212;
+	isolation: isolate;
+}
+.animatedBackground::before {
+	content: "";
+	position: absolute;
+	inset: -35%;
+	background:
+		radial-gradient(
+			circle at 20% 20%,
+			var(
+				--spicy-cover-highlight,
+				color-mix(in srgb, var(--spicy-accent) 68%, transparent)
+			),
+			transparent 42%
+		),
+		radial-gradient(
+			circle at 80% 70%,
+			var(
+				--spicy-cover-base,
+				color-mix(in srgb, var(--spicy-accent) 38%, #6b1b58)
+			),
+			transparent 48%
+		), #121212;
+	filter: blur(3.5cqw) saturate(1.35);
+	animation: spicyAmbientBackground 18s ease-in-out infinite alternate;
 }
 .backgroundCanvas {
 	object-fit: cover;
+	z-index: 1;
 }
 .colorBackground {
-	background: radial-gradient(
-		circle at 20% 10%,
-		color-mix(in srgb, var(--spicy-accent) 65%, transparent),
-		#111 65%
+	background: var(
+		--spicy-cover-base,
+		color-mix(in srgb, var(--spicy-accent) 16%, #121212)
 	);
+	transition:
+		background-color 1.5s,
+		background 1.5s;
+}
+.colorBackground::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	height: 90%;
+	background: var(
+		--spicy-cover-highlight,
+		color-mix(in srgb, var(--spicy-accent) 31%, #121212)
+	);
+	mask-image: linear-gradient(to top, transparent, black 145%);
+	-webkit-mask-image: linear-gradient(to top, transparent, black 145%);
+}
+.colorBackground::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to top, rgba(0, 0, 0, 0.42), transparent);
 }
 .staticBackground {
 	background-position: center;
 	background-size: cover;
-	filter: blur(12px) saturate(1.25);
-	scale: 1.06;
-	opacity: 0.72;
+	background-repeat: no-repeat;
+	filter: brightness(0.55) contrast(1.05) saturate(1.7) blur(28px);
+	scale: 1.25;
+}
+.staticFallback {
+	background:
+		radial-gradient(
+			ellipse at 50% 0%,
+			color-mix(in srgb, var(--spicy-accent) 20%, transparent),
+			transparent 58%
+		), #121212;
 }
 .overlay {
 	position: absolute;
@@ -271,4 +323,13 @@
 		rgba(255, 255, 255, 1) var(--gradient-position),
 		rgba(255, 255, 255, 0.3) calc(var(--gradient-position) + 50%)
 	);
+}
+
+@keyframes spicyAmbientBackground {
+	from {
+		transform: translate3d(-5%, -4%, 0) scale(1);
+	}
+	to {
+		transform: translate3d(6%, 5%, 0) scale(1.12);
+	}
 }

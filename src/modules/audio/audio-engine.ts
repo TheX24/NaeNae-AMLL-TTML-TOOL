@@ -1,6 +1,7 @@
 import {
 	type AudioTaskType,
 	audioBufferAtom,
+	audioCoverArtAtom,
 	audioErrorAtom,
 	audioTaskStateAtom,
 	auditionTimeAtom,
@@ -373,11 +374,32 @@ class AudioEngine extends EventTarget {
 
 	//#region Load sound
 	private musicBuffer: AudioBuffer | null = null;
+	private coverArtRequest = 0;
+
+	private setEmbeddedCoverArt(coverUrl: string | null) {
+		const previous = globalStore.get(audioCoverArtAtom);
+		if (previous && previous !== coverUrl) URL.revokeObjectURL(previous);
+		globalStore.set(audioCoverArtAtom, coverUrl);
+	}
 
 	async loadMusic(src: Blob, isRetry = false): Promise<HTMLAudioElement> {
 		const audioEl = this.audioEl;
 
 		if (!isRetry) {
+			const request = ++this.coverArtRequest;
+			this.setEmbeddedCoverArt(null);
+			void this.workerClient
+				.readMetadata(src)
+				.then((metadata) => {
+					if (request !== this.coverArtRequest) {
+						if (metadata.coverUrl) URL.revokeObjectURL(metadata.coverUrl);
+						return;
+					}
+					this.setEmbeddedCoverArt(metadata.coverUrl ?? null);
+				})
+				.catch(() => {
+					// Audio playback is still valid when a format has no readable tags.
+				});
 			if (this.musicBuffer) {
 				this.pauseMusic();
 				this.musicBuffer = null;

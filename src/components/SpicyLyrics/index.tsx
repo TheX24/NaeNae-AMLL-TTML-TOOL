@@ -12,9 +12,10 @@ import {
 	useEffect,
 	useMemo,
 	useRef,
+	useState,
 } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
-import { currentTimeAtom } from "$/modules/audio/states";
+import { audioCoverArtAtom, currentTimeAtom } from "$/modules/audio/states";
 import { customBackgroundImageAtom } from "$/modules/settings/modals/customBackground";
 import {
 	customAccentColorAtom,
@@ -41,6 +42,7 @@ type KawarpInstance = {
 	}): void;
 };
 type SpringSet = { scale: Spring; y: Spring; glow: Spring; opacity: Spring };
+type CoverPalette = { base: string; highlight: string };
 
 const scaleSpline = new CubicSpline([
 	[0, 0.95],
@@ -107,6 +109,79 @@ const easeSinOut = (progress: number) => Math.sin((Math.PI * progress) / 2);
 const keyFor = (line: SpicyLine, word: SpicyToken, index: number) =>
 	`${line.id}:${word.id}:${index}`;
 
+const colorToHex = (red: number, green: number, blue: number) =>
+	`#${[red, green, blue]
+		.map((value) => Math.round(value).toString(16).padStart(2, "0"))
+		.join("")}`;
+
+function useCoverPalette(imageSource: string | null) {
+	const [palette, setPalette] = useState<CoverPalette | null>(null);
+	useEffect(() => {
+		if (!imageSource) {
+			setPalette(null);
+			return;
+		}
+		let cancelled = false;
+		const image = new Image();
+		image.crossOrigin = "anonymous";
+		image.src = imageSource;
+		void image
+			.decode()
+			.then(() => {
+				const canvas = document.createElement("canvas");
+				canvas.width = 32;
+				canvas.height = 32;
+				const context = canvas.getContext("2d", { willReadFrequently: true });
+				if (!context) return;
+				context.drawImage(image, 0, 0, canvas.width, canvas.height);
+				const { data } = context.getImageData(
+					0,
+					0,
+					canvas.width,
+					canvas.height,
+				);
+				let base = { red: 0, green: 0, blue: 0, weight: 0 };
+				let highlight = { red: 0, green: 0, blue: 0, saturation: -1 };
+				for (let index = 0; index < data.length; index += 4) {
+					const red = data[index];
+					const green = data[index + 1];
+					const blue = data[index + 2];
+					const alpha = data[index + 3] / 255;
+					const max = Math.max(red, green, blue);
+					const min = Math.min(red, green, blue);
+					const saturation = max === 0 ? 0 : (max - min) / max;
+					const weight = alpha * (0.35 + saturation * 0.65);
+					base.red += red * weight;
+					base.green += green * weight;
+					base.blue += blue * weight;
+					base.weight += weight;
+					if (saturation > highlight.saturation && max > 38 && max < 235)
+						highlight = { red, green, blue, saturation };
+				}
+				if (!base.weight || cancelled) return;
+				const baseColor = colorToHex(
+					base.red / base.weight,
+					base.green / base.weight,
+					base.blue / base.weight,
+				);
+				setPalette({
+					base: baseColor,
+					highlight:
+						highlight.saturation >= 0
+							? colorToHex(highlight.red, highlight.green, highlight.blue)
+							: baseColor,
+				});
+			})
+			.catch(() => {
+				if (!cancelled) setPalette(null);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [imageSource]);
+	return palette;
+}
+
 function useKawarpBackground(
 	container: RefObject<HTMLDivElement | null>,
 	image: string | null,
@@ -161,7 +236,8 @@ export const SpicyLyrics = memo(() => {
 	const romanized = useAtomValue(showRomanLinesAtom);
 	const showTranslation = useAtomValue(showTranslationLinesAtom);
 	const backgroundMode = useAtomValue(spicyBackgroundModeAtom);
-	const image = useAtomValue(customBackgroundImageAtom);
+	const embeddedCoverArt = useAtomValue(audioCoverArtAtom);
+	const customBackgroundImage = useAtomValue(customBackgroundImageAtom);
 	const useAccent = useAtomValue(useCustomAccentAtom);
 	const accent = useAtomValue(customAccentColorAtom);
 	const setCurrentTime = useSetAtom(currentTimeAtom);
@@ -169,6 +245,18 @@ export const SpicyLyrics = memo(() => {
 		() => buildSpicyLines(lyrics.lyricLines, simple, romanized),
 		[lyrics.lyricLines, simple, romanized],
 	);
+	// Match Spicy's priority: artwork embedded in the loaded audio file comes first.
+	// TTML cover_art and the app-level custom image are only fallbacks.
+	const coverArtImage = useMemo(
+		() =>
+			lyrics.metadata
+				.find((entry) => entry.key.toLowerCase() === "cover_art")
+				?.value.find((value) => value.trim().length > 0) ?? null,
+		[lyrics.metadata],
+	);
+	const backgroundImage =
+		embeddedCoverArt ?? coverArtImage ?? customBackgroundImage;
+	const coverPalette = useCoverPalette(backgroundImage);
 	const viewportRef = useRef<HTMLDivElement>(null);
 	const backgroundRef = useRef<HTMLDivElement>(null);
 	const lineNodes = useRef(new Map<string, HTMLDivElement>());
@@ -177,7 +265,7 @@ export const SpicyLyrics = memo(() => {
 	const scrollPauseUntil = useRef(0);
 	const lastLine = useRef<string | null>(null);
 	const lastTime = useRef(performance.now());
-	useKawarpBackground(backgroundRef, image, backgroundMode);
+	useKawarpBackground(backgroundRef, backgroundImage, backgroundMode);
 
 	useEffect(() => {
 		const viewport = viewportRef.current;
@@ -530,18 +618,31 @@ export const SpicyLyrics = memo(() => {
 		<div
 			className={classNames(styles.root, simple && styles.simple)}
 			style={
-				{ "--spicy-accent": useAccent ? accent : "#5c6cff" } as CSSProperties
+				{
+					"--spicy-accent": useAccent ? accent : "#5c6cff",
+					"--spicy-cover-base": coverPalette?.base,
+					"--spicy-cover-highlight": coverPalette?.highlight,
+				} as CSSProperties
 			}
 		>
-			<div ref={backgroundRef} className={styles.background} />
-			{backgroundMode !== "animated" || !image ? (
+			<div
+				ref={backgroundRef}
+				className={classNames(
+					styles.background,
+					backgroundMode === "animated" && styles.animatedBackground,
+				)}
+			/>
+			{backgroundMode === "color" ? (
 				<div className={styles.colorBackground} />
 			) : null}
-			{backgroundMode === "static" && image ? (
+			{backgroundMode === "static" && backgroundImage ? (
 				<div
 					className={styles.staticBackground}
-					style={{ backgroundImage: `url("${image}")` }}
+					style={{ backgroundImage: `url("${backgroundImage}")` }}
 				/>
+			) : null}
+			{backgroundMode === "static" && !backgroundImage ? (
+				<div className={styles.staticFallback} />
 			) : null}
 			<div className={styles.overlay} />
 			<div ref={viewportRef} className={styles.viewport}>
