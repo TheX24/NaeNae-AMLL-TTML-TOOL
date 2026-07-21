@@ -22,6 +22,7 @@ import {
 } from "$/modules/settings/states";
 import {
 	showRomanLinesAtom,
+	showFpsCounterAtom,
 	showTranslationLinesAtom,
 	spicyBackgroundModeAtom,
 	spicySimpleLyricsModeAtom,
@@ -248,6 +249,7 @@ export const SpicyLyrics = memo(() => {
 	const simple = useAtomValue(spicySimpleLyricsModeAtom);
 	const romanized = useAtomValue(showRomanLinesAtom);
 	const showTranslation = useAtomValue(showTranslationLinesAtom);
+	const showFps = useAtomValue(showFpsCounterAtom);
 	const backgroundMode = useAtomValue(spicyBackgroundModeAtom);
 	const embeddedCoverArt = useAtomValue(audioCoverArtAtom);
 	const customBackgroundImage = useAtomValue(customBackgroundImageAtom);
@@ -283,7 +285,16 @@ export const SpicyLyrics = memo(() => {
 	const scrollPauseUntil = useRef(0);
 	const lastLine = useRef<string | null>(null);
 	const lastTime = useRef(performance.now());
+	const [fps, setFps] = useState(0);
+	const fpsRef = useRef({ frames: 0, lastTime: performance.now() });
+	const showFpsRef = useRef(showFps);
 	useKawarpBackground(backgroundRef, backgroundImage, backgroundMode);
+
+	useEffect(() => {
+		showFpsRef.current = showFps;
+		fpsRef.current = { frames: 0, lastTime: performance.now() };
+		setFps(0);
+	}, [showFps]);
 
 	useEffect(() => {
 		if (simple) return;
@@ -314,6 +325,19 @@ export const SpicyLyrics = memo(() => {
 		let raf = 0;
 		let previousPosition = -Infinity;
 		const animate = (now: number) => {
+			if (showFpsRef.current) {
+				fpsRef.current.frames++;
+				if (now - fpsRef.current.lastTime >= 1000) {
+					setFps(
+						Math.round(
+							(fpsRef.current.frames * 1000) /
+								(now - fpsRef.current.lastTime),
+						),
+					);
+					fpsRef.current.frames = 0;
+					fpsRef.current.lastTime = now;
+				}
+			}
 			const dt = (now - lastTime.current) / 1000;
 			lastTime.current = now;
 			const time = Math.max(
@@ -860,6 +884,7 @@ export const SpicyLyrics = memo(() => {
 				<div className={styles.staticFallback} />
 			) : null}
 			<div className={styles.overlay} />
+			{showFps ? <div className={styles.fpsCounter}>FPS: {fps}</div> : null}
 			<div
 				ref={viewportRef}
 				className={classNames(
