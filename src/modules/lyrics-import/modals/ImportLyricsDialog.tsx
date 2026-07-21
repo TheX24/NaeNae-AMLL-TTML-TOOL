@@ -135,10 +135,61 @@ export const ImportLyricsDialog = ({
 									result.song_art_image_url ||
 									result.song_art_image_thumbnail_url,
 								fetchLyrics: () => GeniusApi.getLyrics(result.id),
-								fetchSongwriters: async () =>
-									(
+								fetchSongwriters: async () => {
+									const artists = (
 										await GeniusApi.getSongById(result.id, geniusApiKey)
-									).response.song.writer_artists.map((artist) => artist.name),
+									).response.song.writer_artists;
+									const realNames: string[] = [];
+									for (const artist of artists) {
+										try {
+											const detail = (
+												await GeniusApi.getArtistById(artist.id, geniusApiKey)
+											).response.artist;
+											const description = detail.description.plain || "";
+											const bornMatch = description.match(
+												/born\s+([A-Z][a-zA-Z.]+(?:\s[A-Z][a-zA-Z.]+){1,4})/,
+											);
+											const realNameMatch = description.match(
+												/real\s+name\s+(?:is\s+)?([A-Z][a-zA-Z.]+(?:\s[A-Z][a-zA-Z.]+){1,4})/i,
+											);
+											const potentialNames = detail.alternate_names.filter(
+												(name) => {
+													const lowerArtist = artist.name.toLowerCase();
+													return (
+														!name.toLowerCase().includes(lowerArtist) &&
+														!lowerArtist.includes(name.toLowerCase()) &&
+														name.split(" ").length >= 2 &&
+														name.split(" ").length <= 4 &&
+														![
+															"King ",
+															"The ",
+															"Mr. ",
+															"aka ",
+															"alias ",
+															"DJ ",
+														].some((prefix) => name.startsWith(prefix)) &&
+														name
+															.split(" ")
+															.every((word) => /^[A-Z]/.test(word)) &&
+														!name.includes("http") &&
+														!name.includes("www.")
+													);
+												},
+											);
+											realNames.push(
+												bornMatch?.[1] ||
+													realNameMatch?.[1] ||
+													potentialNames.sort(
+														(a, b) => a.length - b.length,
+													)[0] ||
+													artist.name,
+											);
+										} catch {
+											realNames.push(artist.name);
+										}
+									}
+									return realNames;
+								},
 							}),
 						)
 					: source === "lrclib"
@@ -277,9 +328,7 @@ export const ImportLyricsDialog = ({
 					(item) => item.key === "songwriter",
 				);
 				if (entry) {
-					for (const writer of writers) {
-						if (!entry.value.includes(writer)) entry.value.push(writer);
-					}
+					entry.value = writers;
 				} else if (writers.length) {
 					current.metadata.push({ key: "songwriter", value: writers });
 				}
