@@ -43,6 +43,10 @@ type KawarpInstance = {
 };
 type SpringSet = { scale: Spring; y: Spring; glow: Spring; opacity: Spring };
 type CoverPalette = { base: string; highlight: string };
+type SlmAnimation = {
+	animation?: Animation;
+	phase: "idle" | "pre" | "fill" | "sung";
+};
 
 const scaleSpline = new CubicSpline([
 	[0, 0.95],
@@ -101,6 +105,11 @@ const dotGlowSpline = new CubicSpline([
 ]);
 const dotOpacitySpline = new CubicSpline([
 	[0, 0.35],
+	[0.6, 1],
+	[1, 1],
+]);
+const simpleDotOpacitySpline = new CubicSpline([
+	[0, 0.27],
 	[0.6, 1],
 	[1, 1],
 ]);
@@ -262,10 +271,22 @@ export const SpicyLyrics = memo(() => {
 	const lineNodes = useRef(new Map<string, HTMLDivElement>());
 	const wordNodes = useRef(new Map<string, HTMLElement>());
 	const springs = useRef(new Map<string, SpringSet>());
+	const slmAnimations = useRef(new Map<string, SlmAnimation>());
 	const scrollPauseUntil = useRef(0);
 	const lastLine = useRef<string | null>(null);
 	const lastTime = useRef(performance.now());
 	useKawarpBackground(backgroundRef, backgroundImage, backgroundMode);
+
+	useEffect(() => {
+		if (simple) return;
+		for (const [key, animation] of slmAnimations.current) {
+			animation.animation?.cancel();
+			wordNodes.current
+				.get(key)
+				?.style.removeProperty("--spicy-slm-gradient-position");
+		}
+		slmAnimations.current.clear();
+	}, [simple]);
 
 	useEffect(() => {
 		const viewport = viewportRef.current;
@@ -337,6 +358,88 @@ export const SpicyLyrics = memo(() => {
 							: wordState === "sung"
 								? 1
 								: 0;
+					const slmStateFor = (nodeKey: string) => {
+						let result = slmAnimations.current.get(nodeKey);
+						if (!result) {
+							result = { phase: "idle" };
+							slmAnimations.current.set(nodeKey, result);
+						}
+						return result;
+					};
+					const pinSlmGradient = (
+						nodeKey: string,
+						node: HTMLElement | undefined,
+						position: "-50%" | "100%",
+					) => {
+						if (!node) return;
+						const animation = slmStateFor(nodeKey);
+						const phase = position === "100%" ? "sung" : "idle";
+						if (animation.phase === phase) return;
+						animation.animation?.cancel();
+						animation.animation = undefined;
+						animation.phase = phase;
+						node.style.setProperty("--spicy-slm-gradient-position", position);
+					};
+					const runSlmAnimation = (
+						nodeKey: string,
+						node: HTMLElement | undefined,
+						phase: "pre" | "fill",
+						duration: number,
+					) => {
+						if (!node || !simple) return;
+						const animation = slmStateFor(nodeKey);
+						if (animation.phase === phase) return;
+						animation.animation?.cancel();
+						node.style.removeProperty("--spicy-slm-gradient-position");
+						animation.phase = phase;
+						animation.animation = node.animate(
+							phase === "fill"
+								? [
+										{ "--spicy-slm-gradient-position": "-27.5%" },
+										{ "--spicy-slm-gradient-position": "100%" },
+									]
+								: [
+										{ "--spicy-slm-gradient-position": "-50%" },
+										{ "--spicy-slm-gradient-position": "-27.5%" },
+									],
+							{
+								duration: Math.max(0, duration),
+								easing: "linear",
+								fill: "forwards",
+							},
+						);
+					};
+					const prefillToken = (
+						next: SpicyToken | undefined,
+						nextIndex: number,
+					) => {
+						if (
+							!next ||
+							stateAt(time, next.startTime, next.endTime) !== "not-sung"
+						)
+							return;
+						const nextKey = keyFor(line, next, nextIndex);
+						if (next.letters) {
+							for (let index = 0; index < next.letters.length; index++) {
+								const letterStart =
+									next.startTime +
+									index *
+										((next.endTime - next.startTime) / next.letters.length);
+								runSlmAnimation(
+									`${nextKey}:${letterStart}`,
+									wordNodes.current.get(`${nextKey}:${letterStart}`),
+									"pre",
+									125,
+								);
+							}
+						} else
+							runSlmAnimation(
+								nextKey,
+								wordNodes.current.get(nextKey),
+								"pre",
+								125,
+							);
+					};
 					const animateNode = (
 						nodeKey: string,
 						node: HTMLElement | undefined,
@@ -363,16 +466,35 @@ export const SpicyLyrics = memo(() => {
 							isDot ? dotScaleSpline : letter ? letterScaleSpline : scaleSpline
 						).at(p);
 						const y = (
-							isDot ? dotYSpline : letter ? letterYSpline : ySpline
+							isDot
+								? dotYSpline
+								: letter
+									? simple
+										? simpleLetterYSpline
+										: letterYSpline
+									: simple
+										? simpleYSpline
+										: ySpline
 						).at(p);
 						const glow = (isDot ? dotGlowSpline : glowSpline).at(p);
-						set.scale.setGoal(scale);
-						set.y.setGoal(y);
-						set.glow.setGoal(glow);
-						set.opacity.setGoal(isDot ? dotOpacitySpline.at(p) : 1);
-						const currentScale = set.scale.step(dt);
-						const currentY = set.y.step(dt);
-						const currentGlow = set.glow.step(dt);
+						const simpleWord = simple && !isDot && !letter;
+						const simpleDot = simple && isDot;
+						if (!simpleWord && !simpleDot) {
+							set.scale.setGoal(scale);
+							set.glow.setGoal(glow);
+						}
+						if (!simpleDot) set.y.setGoal(y);
+						set.opacity.setGoal(
+							isDot
+								? simple
+									? simpleDotOpacitySpline.at(p)
+									: dotOpacitySpline.at(p)
+								: 1,
+						);
+						const currentScale =
+							simpleWord || simpleDot ? 1 : set.scale.step(dt);
+						const currentY = simpleDot ? 0 : set.y.step(dt);
+						const currentGlow = simpleWord || simpleDot ? 0 : set.glow.step(dt);
 						// Spicy keeps translate and scale independent. Dots are 1.3× the
 						// line font, but their vertical bounce is still measured against the
 						// base lyric size, not their enlarged glyph size.
@@ -380,11 +502,25 @@ export const SpicyLyrics = memo(() => {
 							? `translate3d(0, calc(var(--line-size) * ${currentY}), 0)`
 							: `translate3d(0, ${currentY}em, 0)`;
 						node.style.scale = String(currentScale);
-						if (!isDot)
-							node.style.setProperty(
-								"--gradient-position",
-								`${wordState === "active" ? -20 + 120 * p : wordState === "sung" ? 100 : simple ? -50 : -20}%`,
-							);
+						if (!isDot) {
+							if (simple) {
+								const duration = word.endTime - word.startTime;
+								if (wordState === "active") {
+									runSlmAnimation(nodeKey, node, "fill", duration);
+									if (time >= word.startTime + duration * 0.6 - 22)
+										prefillToken(line.words[wi + 1], wi + 1);
+								} else
+									pinSlmGradient(
+										nodeKey,
+										node,
+										wordState === "sung" ? "100%" : "-50%",
+									);
+							} else
+								node.style.setProperty(
+									"--gradient-position",
+									`${wordState === "active" ? -20 + 120 * p : wordState === "sung" ? 100 : -20}%`,
+								);
+						}
 						node.style.setProperty(
 							"--shadow-blur",
 							`${4 + (letter ? 12 : isDot ? 6 : 2) * currentGlow}px`,
@@ -413,12 +549,14 @@ export const SpicyLyrics = memo(() => {
 							};
 							springs.current.set(nodeKey, set);
 						}
-						// The group itself always follows Spicy's regular word-scale curve.
-						// Simple mode only swaps its vertical curve; it does not disable scale.
-						set.scale.setGoal(scaleSpline.at(p));
-						set.glow.setGoal(glowSpline.at(p));
+						// SLM deliberately disables the normal word bounce and glow. Held
+						// letters retain their own smaller proximity effects below.
+						if (!simple) {
+							set.scale.setGoal(scaleSpline.at(p));
+							set.glow.setGoal(glowSpline.at(p));
+						}
 						set.y.setGoal((simple ? simpleYSpline : ySpline).at(p));
-						const currentScale = set.scale.step(dt);
+						const currentScale = simple ? 1 : set.scale.step(dt);
 						const currentY = set.y.step(dt);
 						node.style.transform = `translateY(${currentY}em)`;
 						node.style.scale = String(currentScale);
@@ -453,6 +591,13 @@ export const SpicyLyrics = memo(() => {
 							? simpleLetterScaleSpline
 							: letterScaleSpline;
 						const letterY = simple ? simpleLetterYSpline : letterYSpline;
+						const wordDuration = word.endTime - word.startTime;
+						if (
+							simple &&
+							groupState === "active" &&
+							time >= word.startTime + wordDuration * 0.845 - 130
+						)
+							prefillToken(line.words[wi + 1], wi + 1);
 						for (let index = 0; index < letterInfo.length; index++) {
 							const { start, end } = letterInfo[index];
 							const nodeKey = `${rootKey}:${start}`;
@@ -472,7 +617,10 @@ export const SpicyLyrics = memo(() => {
 							// Spicy has distinct whole-group branches: before a held word, every
 							// letter rests; after it, every letter finishes at its sung value. The
 							// per-letter proximity wave only runs while its group is active.
-							const letterState = stateAt(time, start, end);
+							const letterState =
+								groupState === "active"
+									? stateAt(time, start, end)
+									: groupState;
 							let targetScale = letterScale.at(groupState === "sung" ? 1 : 0);
 							let targetY = letterY.at(groupState === "sung" ? 1 : 0);
 							let targetGlow = glowSpline.at(groupState === "sung" ? 1 : 0);
@@ -532,7 +680,17 @@ export const SpicyLyrics = memo(() => {
 												: simple
 													? -50
 													: -20;
-							node.style.setProperty("--gradient-position", `${gradient}%`);
+							if (simple) {
+								if (letterState === "active")
+									runSlmAnimation(nodeKey, node, "fill", end - start);
+								else
+									pinSlmGradient(
+										nodeKey,
+										node,
+										letterState === "sung" ? "100%" : "-50%",
+									);
+							} else
+								node.style.setProperty("--gradient-position", `${gradient}%`);
 							node.style.transform = `translateY(${currentY * 2}em)`;
 							node.style.scale = String(currentScale);
 							node.style.setProperty(
