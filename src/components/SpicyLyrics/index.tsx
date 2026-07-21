@@ -6,7 +6,6 @@ import classNames from "classnames";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
 	type CSSProperties,
-	Fragment,
 	memo,
 	type RefObject,
 	useEffect,
@@ -30,7 +29,12 @@ import {
 import { lyricLinesAtom } from "$/states/main";
 import styles from "./index.module.css";
 import { CubicSpline, progressAt, Spring, stateAt } from "./math";
-import { buildSpicyLines, type SpicyLine, type SpicyToken } from "./model";
+import {
+	buildSpicyLines,
+	groupSpicyTokens,
+	type SpicyLine,
+	type SpicyToken,
+} from "./model";
 
 type KawarpInstance = {
 	dispose(): void;
@@ -253,6 +257,10 @@ export const SpicyLyrics = memo(() => {
 	const lines = useMemo(
 		() => buildSpicyLines(lyrics.lyricLines, simple, romanized),
 		[lyrics.lyricLines, simple, romanized],
+	);
+	const hasDuetLines = useMemo(
+		() => lines.some((line) => !line.isDotLine && line.isDuet),
+		[lines],
 	);
 	// Match Spicy's priority: artwork embedded in the loaded audio file comes first.
 	// TTML cover_art and the app-level custom image are only fallbacks.
@@ -772,6 +780,55 @@ export const SpicyLyrics = memo(() => {
 		setCurrentTime(time);
 		audioEngine.seekMusic(time / 1000);
 	};
+	const renderToken = (
+		line: SpicyLine,
+		word: SpicyToken,
+		wordIndex: number,
+		wordBoundary: boolean,
+	) => {
+		const key = keyFor(line, word, wordIndex);
+		const letters = word.letters;
+		const className = letters ? styles.letterGroup : styles.word;
+		return (
+			<span
+				key={key}
+				ref={(node) => {
+					if (node) wordNodes.current.set(key, node);
+					else wordNodes.current.delete(key);
+				}}
+				className={classNames(
+					className,
+					wordBoundary && styles.wordBoundary,
+					word.allowInternalWrap && styles.breakableToken,
+				)}
+			>
+				{letters
+					? letters
+							.map((letter, index) => ({
+								letter,
+								start:
+									word.startTime +
+									index *
+										((word.endTime - word.startTime) /
+											letters.length),
+							}))
+							.map(({ letter, start }) => (
+								<span
+									key={`${key}:${start}`}
+									ref={(node) => {
+										if (node)
+											wordNodes.current.set(`${key}:${start}`, node);
+										else wordNodes.current.delete(`${key}:${start}`);
+									}}
+									className={styles.letter}
+								>
+									{letter}
+								</span>
+							))
+					: word.text}
+			</span>
+		);
+	};
 	return (
 		<div
 			className={classNames(styles.root, simple && styles.simple)}
@@ -803,7 +860,13 @@ export const SpicyLyrics = memo(() => {
 				<div className={styles.staticFallback} />
 			) : null}
 			<div className={styles.overlay} />
-			<div ref={viewportRef} className={styles.viewport}>
+			<div
+				ref={viewportRef}
+				className={classNames(
+					styles.viewport,
+					hasDuetLines && styles.hasDuetLines,
+				)}
+			>
 				{lines.map((line) => (
 					<div
 						key={line.id}
@@ -838,64 +901,27 @@ export const SpicyLyrics = memo(() => {
 								})}
 							</div>
 						) : (
-							line.words.map((word, wi) => {
-								const key = keyFor(line, word, wi);
-								const separator = word.spaceAfter ? (
-									<span className={styles.space}> </span>
-								) : null;
-								if (word.letters)
-									return (
-										<Fragment key={key}>
-											<span
-												ref={(node) => {
-													if (node) wordNodes.current.set(key, node);
-													else wordNodes.current.delete(key);
-												}}
-												className={styles.letterGroup}
-											>
-												{word.letters
-													.map((letter, index) => ({
-														letter,
-														start:
-															word.startTime +
-															index *
-																((word.endTime - word.startTime) /
-																	word.letters.length),
-													}))
-													.map(({ letter, start }) => (
-														<span
-															key={`${key}:${start}`}
-															ref={(node) => {
-																if (node)
-																	wordNodes.current.set(
-																		`${key}:${start}`,
-																		node,
-																	);
-																else
-																	wordNodes.current.delete(`${key}:${start}`);
-															}}
-															className={styles.letter}
-														>
-															{letter}
-														</span>
-													))}
-											</span>
-											{separator}
-										</Fragment>
+							groupSpicyTokens(line.words).map((group) => {
+								const first = group.items[0];
+								if (group.items.length === 1)
+									return renderToken(
+										line,
+										first.token,
+										first.wordIndex,
+										group.hasTrailingSpace,
 									);
 								return (
-									<Fragment key={key}>
-										<span
-											ref={(node) => {
-												if (node) wordNodes.current.set(key, node);
-												else wordNodes.current.delete(key);
-											}}
-											className={line.isDotLine ? styles.dot : styles.word}
-										>
-											{word.text}
-										</span>
-										{separator}
-									</Fragment>
+									<span
+										key={`group:${keyFor(line, first.token, first.wordIndex)}`}
+										className={classNames(
+											styles.wordGroup,
+											group.hasTrailingSpace && styles.wordBoundary,
+										)}
+									>
+										{group.items.map(({ token, wordIndex }) =>
+											renderToken(line, token, wordIndex, false),
+										)}
+									</span>
 								);
 							})
 						)}

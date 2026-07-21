@@ -8,6 +8,18 @@ export interface SpicyToken {
 	letters?: string[];
 	isBackground: boolean;
 	spaceAfter?: boolean;
+	breakAfter?: boolean;
+	allowInternalWrap?: boolean;
+}
+
+export interface SpicyTokenLayoutItem {
+	token: SpicyToken;
+	wordIndex: number;
+}
+
+export interface SpicyWordGroup {
+	items: SpicyTokenLayoutItem[];
+	hasTrailingSpace: boolean;
 }
 
 export interface SpicyLine {
@@ -23,9 +35,44 @@ export interface SpicyLine {
 
 const isRtl = (text: string) =>
 	/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u.test(text);
+const isCjk = (text: string) =>
+	/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(
+		text,
+	);
 const graphemes = (text: string) => Array.from(text);
 const valid = (start: number, end: number) =>
 	Number.isFinite(start) && Number.isFinite(end) && end > start;
+
+/**
+ * Spicy Lyrics keeps timed syllables flat for animation, then adds layout-only
+ * word-group wrappers around syllables connected by IsPartOfWord. TTML stores
+ * the same boundary as a literal whitespace node, represented here by
+ * spaceAfter on the preceding token.
+ */
+export function groupSpicyTokens(tokens: SpicyToken[]): SpicyWordGroup[] {
+	const groups: SpicyWordGroup[] = [];
+	let items: SpicyTokenLayoutItem[] = [];
+
+	for (let wordIndex = 0; wordIndex < tokens.length; wordIndex++) {
+		const token = tokens[wordIndex];
+		items.push({ token, wordIndex });
+
+		if (
+			token.spaceAfter ||
+			token.breakAfter ||
+			wordIndex === tokens.length - 1
+		) {
+			groups.push({
+				items,
+				hasTrailingSpace:
+					!!token.spaceAfter && wordIndex < tokens.length - 1,
+			});
+			items = [];
+		}
+	}
+
+	return groups;
+}
 
 function makeToken(
 	word: LyricWord,
@@ -33,8 +80,10 @@ function makeToken(
 	romanized: boolean,
 	background: boolean,
 ): SpicyToken {
-	const text = romanized && word.romanWord.trim() ? word.romanWord : word.word;
+	const usesRomanization = romanized && !!word.romanWord.trim();
+	const text = usesRomanization ? word.romanWord : word.word;
 	const letters = graphemes(text);
+	const allowInternalWrap = usesRomanization || isCjk(word.word) || isCjk(text);
 	const duration = word.endTime - word.startTime;
 	const letterCapable =
 		!isRtl(text) &&
@@ -53,6 +102,8 @@ function makeToken(
 			letterCapable && emphasisEnd > emphasisStart ? emphasisEnd : word.endTime,
 		letters: letterCapable ? letters : undefined,
 		isBackground: background,
+		breakAfter: allowInternalWrap,
+		allowInternalWrap,
 	};
 }
 

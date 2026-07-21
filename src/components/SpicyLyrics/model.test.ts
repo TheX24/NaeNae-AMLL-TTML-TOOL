@@ -1,0 +1,107 @@
+import { describe, expect, it } from "vitest";
+import {
+	groupSpicyTokens,
+	type SpicyToken,
+	type SpicyWordGroup,
+} from "./model";
+
+const token = (
+	id: string,
+	spaceAfter = false,
+	letters?: string[],
+	breakAfter = false,
+): SpicyToken => ({
+	id,
+	text: id,
+	startTime: 0,
+	endTime: 100,
+	letters,
+	isBackground: false,
+	spaceAfter: spaceAfter || undefined,
+	breakAfter: breakAfter || undefined,
+});
+
+const flatten = (groups: SpicyWordGroup[]) =>
+	groups.flatMap((group) => group.items);
+
+describe("groupSpicyTokens", () => {
+	it("keeps complete words as separate layout items", () => {
+		const tokens = [token("one", true), token("two", true), token("three")];
+		const groups = groupSpicyTokens(tokens);
+
+		expect(
+			groups.map((group) => group.items.map(({ token }) => token.id)),
+		).toEqual([["one"], ["two"], ["three"]]);
+		expect(groups.map((group) => group.hasTrailingSpace)).toEqual([
+			true,
+			true,
+			false,
+		]);
+	});
+
+	it("groups connected syllables and includes the final syllable", () => {
+		const tokens = [
+			token("be"),
+			token("au"),
+			token("ti"),
+			token("ful", true),
+			token("day"),
+		];
+		const groups = groupSpicyTokens(tokens);
+
+		expect(groups).toHaveLength(2);
+		expect(groups[0].items.map(({ token }) => token.id)).toEqual([
+			"be",
+			"au",
+			"ti",
+			"ful",
+		]);
+		expect(groups[0].hasTrailingSpace).toBe(true);
+		expect(groups[1].items.map(({ token }) => token.id)).toEqual(["day"]);
+	});
+
+	it("builds multiple syllable groups around literal spaces", () => {
+		const tokens = [token("hel"), token("lo", true), token("wor"), token("ld")];
+
+		expect(
+			groupSpicyTokens(tokens).map((group) =>
+				group.items.map(({ token }) => token.id),
+			),
+		).toEqual([
+			["hel", "lo"],
+			["wor", "ld"],
+		]);
+	});
+
+	it("preserves held tokens and every original token index", () => {
+		const tokens = [
+			token("held", true, ["h", "e", "l", "d"]),
+			token("sy"),
+			token("lla"),
+			token("ble"),
+		];
+		const flattened = flatten(groupSpicyTokens(tokens));
+
+		expect(flattened.map(({ token }) => token)).toEqual(tokens);
+		expect(flattened.map(({ wordIndex }) => wordIndex)).toEqual([0, 1, 2, 3]);
+		expect(flattened[0].token.letters).toEqual(["h", "e", "l", "d"]);
+	});
+
+	it("creates wrap boundaries for adjacent CJK or romanized tokens without spaces", () => {
+		const tokens = [
+			token("世", false, undefined, true),
+			token("界", false, undefined, true),
+			token("romanization", false, undefined, true),
+		];
+		const groups = groupSpicyTokens(tokens);
+
+		expect(
+			groups.map((group) => group.items.map(({ token }) => token.id)),
+		).toEqual([["世"], ["界"], ["romanization"]]);
+		expect(groups.every((group) => !group.hasTrailingSpace)).toBe(true);
+	});
+
+	it("returns no groups for an empty line", () => {
+		expect(groupSpicyTokens([])).toEqual([]);
+	});
+});
