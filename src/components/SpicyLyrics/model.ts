@@ -135,7 +135,12 @@ function makeTokens(
 	return tokens;
 }
 
-function dotLine(startTime: number, endTime: number, id: string): SpicyLine {
+function dotLine(
+	startTime: number,
+	endTime: number,
+	id: string,
+	isDuet: boolean,
+): SpicyLine {
 	const total = endTime - startTime;
 	const base = total / 3;
 	const first = Math.max(startTime, startTime + base - 550 / 3);
@@ -146,7 +151,9 @@ function dotLine(startTime: number, endTime: number, id: string): SpicyLine {
 		startTime,
 		endTime,
 		isBackground: false,
-		isDuet: false,
+		// An interlude leads into its following vocal line, so it uses that
+		// line's side rather than the side of the lyric that just finished.
+		isDuet,
 		isDotLine: true,
 		words: [
 			{
@@ -194,14 +201,26 @@ export function buildSpicyLines(
 		}));
 	const result: SpicyLine[] = [];
 	if (normalized[0]?.startTime >= 3000)
-		result.push(dotLine(0, normalized[0].startTime, "spicy-leading-dot"));
+		result.push(
+			dotLine(
+				0,
+				normalized[0].startTime,
+				"spicy-leading-dot",
+				normalized[0].isDuet,
+			),
+		);
 	for (let i = 0; i < normalized.length; i++) {
 		const line = normalized[i];
 		result.push(line);
 		const next = normalized[i + 1];
 		if (next && next.startTime - line.endTime >= 3000)
 			result.push(
-				dotLine(line.endTime, next.startTime, `spicy-dot-${line.id}`),
+				dotLine(
+					line.endTime,
+					next.startTime,
+					`spicy-dot-${line.id}`,
+					next.isDuet,
+				),
 			);
 	}
 	return result;

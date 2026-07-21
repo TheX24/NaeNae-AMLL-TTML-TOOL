@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+	buildSpicyLines,
 	groupSpicyTokens,
 	type SpicyToken,
 	type SpicyWordGroup,
 } from "./model";
+import { newLyricLine, newLyricWord } from "$/types/ttml";
 
 const token = (
 	id: string,
@@ -103,5 +105,31 @@ describe("groupSpicyTokens", () => {
 
 	it("returns no groups for an empty line", () => {
 		expect(groupSpicyTokens([])).toEqual([]);
+	});
+});
+
+describe("buildSpicyLines", () => {
+	it("places interlude dots on the next vocal line's side", () => {
+		const first = newLyricLine();
+		first.id = "first";
+		first.startTime = 0;
+		first.endTime = 1_000;
+		first.words = [
+			{ ...newLyricWord(), startTime: 0, endTime: 1_000, word: "First" },
+		];
+		const next = newLyricLine();
+		next.id = "next";
+		next.startTime = 4_000;
+		next.endTime = 5_000;
+		next.isDuet = true;
+		next.words = [
+			{ ...newLyricWord(), startTime: 4_000, endTime: 5_000, word: "Next" },
+		];
+
+		const dot = buildSpicyLines([first, next], false, false).find(
+			(line) => line.isDotLine,
+		);
+
+		expect(dot?.isDuet).toBe(true);
 	});
 });
