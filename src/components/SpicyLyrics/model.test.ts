@@ -172,7 +172,7 @@ describe("buildSpicyLines", () => {
 		next.endTime = 5_000;
 		next.isDuet = true;
 		next.words = [
-			{ ...newLyricWord(), startTime: 4_000, endTime: 5_000, word: "Next" },
+			{ ...newLyricWord(), startTime: 4_000, endTime: 5_000, word: "التالي" },
 		];
 
 		const dot = buildSpicyLines([first, next], false, false).find(
@@ -180,5 +180,6 @@ describe("buildSpicyLines", () => {
 		);
 
 		expect(dot?.isDuet).toBe(true);
+		expect(dot?.isRtl).toBe(true);
 	});
 });

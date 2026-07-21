@@ -178,6 +178,7 @@ function dotLine(
 	endTime: number,
 	id: string,
 	isDuet: boolean,
+	isRtl: boolean,
 ): SpicyLine {
 	const total = endTime - startTime;
 	const base = total / 3;
@@ -189,7 +190,7 @@ function dotLine(
 		startTime,
 		endTime,
 		isLineSynced: false,
-		isRtl: false,
+		isRtl,
 		isBackground: false,
 		// An interlude leads into its following vocal line, so it uses that
 		// line's side rather than the side of the lyric that just finished.
@@ -253,6 +254,7 @@ export function buildSpicyLines(
 				normalized[0].startTime,
 				"spicy-leading-dot",
 				normalized[0].isDuet,
+				normalized[0].isRtl,
 			),
 		);
 	for (let i = 0; i < normalized.length; i++) {
@@ -266,6 +268,7 @@ export function buildSpicyLines(
 					next.startTime,
 					`spicy-dot-${line.id}`,
 					next.isDuet,
+					next.isRtl,
 				),
 			);
 	}
