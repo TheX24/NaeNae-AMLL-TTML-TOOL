@@ -1,0 +1,157 @@
+import type { LyricLine, LyricWord } from "$/types/ttml";
+
+export interface SpicyToken {
+	id: string;
+	text: string;
+	startTime: number;
+	endTime: number;
+	letters?: string[];
+	isBackground: boolean;
+	spaceAfter?: boolean;
+}
+
+export interface SpicyLine {
+	id: string;
+	startTime: number;
+	endTime: number;
+	isBackground: boolean;
+	isDuet: boolean;
+	isDotLine?: boolean;
+	translation?: string;
+	words: SpicyToken[];
+}
+
+const isRtl = (text: string) =>
+	/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u.test(text);
+const graphemes = (text: string) => Array.from(text);
+const valid = (start: number, end: number) =>
+	Number.isFinite(start) && Number.isFinite(end) && end > start;
+
+function makeToken(
+	word: LyricWord,
+	simple: boolean,
+	romanized: boolean,
+	background: boolean,
+): SpicyToken {
+	const text = romanized && word.romanWord.trim() ? word.romanWord : word.word;
+	const letters = graphemes(text);
+	const duration = word.endTime - word.startTime;
+	const letterCapable =
+		!isRtl(text) &&
+		duration >= (simple ? 1050 : 1000) &&
+		(!simple || letters.length <= 12);
+	// Spicy's Emphasize helper gives held words their own timing window. In
+	// normal mode it finishes the letter pass 250ms before the word end; simple
+	// mode applies its matching start/end offsets.
+	const emphasisStart = simple ? word.startTime + 21 : word.startTime;
+	const emphasisEnd = simple ? word.endTime + 40 : word.endTime - 250;
+	return {
+		id: word.id,
+		text,
+		startTime: letterCapable ? emphasisStart : word.startTime,
+		endTime:
+			letterCapable && emphasisEnd > emphasisStart ? emphasisEnd : word.endTime,
+		letters: letterCapable ? letters : undefined,
+		isBackground: background,
+	};
+}
+
+/**
+ * TTML literal text nodes, including spaces between timed spans, are represented
+ * by the editor as zero-timed lyric words. Keep those boundaries; never infer
+ * them from the script or from romanization, since a timed lyric word can be a
+ * syllable rather than a complete word.
+ */
+function makeTokens(
+	words: LyricWord[],
+	simple: boolean,
+	romanized: boolean,
+	background: boolean,
+): SpicyToken[] {
+	const tokens: SpicyToken[] = [];
+
+	for (const word of words) {
+		if (/^\s+$/u.test(word.word)) {
+			const previous = tokens.at(-1);
+			if (previous) previous.spaceAfter = true;
+			continue;
+		}
+
+		if (valid(word.startTime, word.endTime))
+			tokens.push(makeToken(word, simple, romanized, background));
+	}
+
+	return tokens;
+}
+
+function dotLine(startTime: number, endTime: number, id: string): SpicyLine {
+	const total = endTime - startTime;
+	const base = total / 3;
+	const first = Math.max(startTime, startTime + base - 550 / 3);
+	const second = Math.max(first, startTime + base * 2 - (550 * 2) / 3);
+	const third = Math.max(second, endTime - 550);
+	return {
+		id,
+		startTime,
+		endTime,
+		isBackground: false,
+		isDuet: false,
+		isDotLine: true,
+		words: [
+			{
+				id: `${id}-0`,
+				text: "•",
+				startTime,
+				endTime: first,
+				isBackground: false,
+			},
+			{
+				id: `${id}-1`,
+				text: "•",
+				startTime: first,
+				endTime: second,
+				isBackground: false,
+			},
+			{
+				id: `${id}-2`,
+				text: "•",
+				startTime: second,
+				endTime: third,
+				isBackground: false,
+			},
+		],
+	};
+}
+
+export function buildSpicyLines(
+	source: LyricLine[],
+	simple: boolean,
+	romanized: boolean,
+): SpicyLine[] {
+	const normalized = source
+		.filter((line) => valid(line.startTime, line.endTime))
+		.slice()
+		.sort((a, b) => a.startTime - b.startTime)
+		.map((line) => ({
+			id: line.id,
+			startTime: line.startTime,
+			endTime: line.endTime,
+			isBackground: !!line.isBG,
+			isDuet: !!line.isDuet,
+			translation: line.translatedLyric || undefined,
+			words: makeTokens(line.words, simple, romanized, !!line.isBG),
+		}));
+	const result: SpicyLine[] = [];
+	if (normalized[0]?.startTime >= 3000)
+		result.push(dotLine(0, normalized[0].startTime, "spicy-leading-dot"));
+	for (let i = 0; i < normalized.length; i++) {
+		const line = normalized[i];
+		result.push(line);
+		const next = normalized[i + 1];
+		if (next && next.startTime - line.endTime >= 3000)
+			result.push(
+				dotLine(line.endTime, next.startTime, `spicy-dot-${line.id}`),
+			);
+	}
+	return result;
+}

@@ -4,9 +4,9 @@ import {
 	audioErrorAtom,
 	audioTaskStateAtom,
 	auditionTimeAtom,
+	EQ_FREQUENCIES,
 	equalizerEnabledAtom,
 	equalizerGainsAtom,
-	EQ_FREQUENCIES,
 	loadedAudioAtom,
 } from "$/modules/audio/states/index.ts";
 import { AudioWorkerClient } from "$/modules/audio/workers/audio-worker-client";
@@ -49,14 +49,19 @@ class AudioEngine extends EventTarget {
 	private _eqNodes: BiquadFilterNode[] = [];
 	private get eqNodes() {
 		if (this._eqNodes.length > 0) return this._eqNodes;
-		
+
 		const nodes: BiquadFilterNode[] = [];
 		const gains = globalStore.get(equalizerGainsAtom);
 		const enabled = globalStore.get(equalizerEnabledAtom);
 
 		EQ_FREQUENCIES.forEach((freq, i) => {
 			const node = this.ctx.createBiquadFilter();
-			node.type = (i === 0) ? "lowshelf" : (i === EQ_FREQUENCIES.length - 1) ? "highshelf" : "peaking";
+			node.type =
+				i === 0
+					? "lowshelf"
+					: i === EQ_FREQUENCIES.length - 1
+						? "highshelf"
+						: "peaking";
 			node.frequency.value = freq;
 			node.gain.value = enabled ? gains[i] : 0;
 			node.Q.value = 1;
@@ -65,12 +70,12 @@ class AudioEngine extends EventTarget {
 
 		// Connect chain
 		for (let i = 0; i < nodes.length - 1; i++) {
-			nodes[i].connect(nodes[i+1]);
+			nodes[i].connect(nodes[i + 1]);
 		}
-		
+
 		// Final node connects to gain
 		nodes[nodes.length - 1].connect(this.gain);
-		
+
 		this._eqNodes = nodes;
 		return nodes;
 	}
@@ -79,8 +84,24 @@ class AudioEngine extends EventTarget {
 		const gains = globalStore.get(equalizerGainsAtom);
 		const enabled = globalStore.get(equalizerEnabledAtom);
 		this.eqNodes.forEach((node, i) => {
-			node.gain.setTargetAtTime(enabled ? gains[i] : 0, this.ctx.currentTime, 0.05);
+			node.gain.setTargetAtTime(
+				enabled ? gains[i] : 0,
+				this.ctx.currentTime,
+				0.05,
+			);
 		});
+	}
+
+	private _analyserNode: AnalyserNode | null = null;
+	/** A read-only analysis tap for visualizers. It is connected in parallel and never changes playback output. */
+	get analyserNode() {
+		if (this._analyserNode) return this._analyserNode;
+		const analyser = this.ctx.createAnalyser();
+		analyser.fftSize = 512;
+		analyser.smoothingTimeConstant = 0.78;
+		this.eqNodes[this.eqNodes.length - 1].connect(analyser);
+		this._analyserNode = analyser;
+		return analyser;
 	}
 
 	public get eqEntryPoint() {
@@ -123,7 +144,7 @@ class AudioEngine extends EventTarget {
 	}
 
 	private _mediaSourceNode: MediaElementAudioSourceNode | null = null;
-	
+
 	/** Connect AudioElement to AudioContext, called after load finished */
 	private connectAudioToContext() {
 		if (!this._audioEl || !this.ctx || this._audioEl.src === "") return;
@@ -146,15 +167,15 @@ class AudioEngine extends EventTarget {
 	}
 
 	private _listenersSetup = false;
-	
+
 	/** Link audio element events into engine events */
 	private setupAudioListeners() {
 		if (this._listenersSetup) return;
 		const audioEl = this._audioEl;
 		if (!audioEl) return;
-		
+
 		this._listenersSetup = true;
-		
+
 		const events = {
 			play: "music-resume",
 			pause: "music-pause",
